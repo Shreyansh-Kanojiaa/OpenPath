@@ -1,0 +1,174 @@
+@import 'tailwindcss';
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   DESIGN TOKENS — Pastel Dark palette (Tokyo Night inspired)
+   Base: #1a1b2e  Surface: #222436  Border: #363b54  Blue: #7aa2f7  Green: #9ece6a
+───────────────────────────────────────────────────────────────────────────── */
+@theme {
+  /* Core backgrounds */
+  --color-base:        #1a1b2e;
+  --color-surface:     #222436;
+  --color-overlay:     #292d42;
+  --color-subtle:      #2a2d42;
+  --color-border:      #363b54;
+  --color-border-muted: #2a2d42;
+
+  /* Charcoal aliases kept for App.jsx compatibility */
+  --color-charcoal-950: #1a1b2e;
+  --color-charcoal-900: #1a1b2e;
+  --color-charcoal-800: #222436;
+  --color-charcoal-700: #2a2d42;
+  --color-charcoal-600: #363b54;
+  --color-charcoal-500: #414868;
+  --color-charcoal-400: #565f89;
+
+  /* Accent — pastel */
+  --color-cyan: #7aa2f7;
+  --color-blue: #7aa2f7;
+  --color-blue-bright: #a9c1f7;
+  --color-green: #9ece6a;
+  --color-green-bright: #b5e8a0;
+
+  /* Shadow utilities */
+  --shadow-blue-glow: 0 0 20px rgba(122, 162, 247, 0.20);
+  --shadow-blue-glow-sm: 0 0 12px rgba(122, 162, 247, 0.12);
+
+  /* Text */
+  --color-text-primary: #c0caf5;
+  --color-text-secondary: #7982a9;
+  --color-text-muted: #565f89;
+
+  /* Typography — Inter everywhere */
+  --font-sans: "Inter", "system-ui", "-apple-system", "Segoe UI", "sans-serif";
+  --font-display: "Inter", "system-ui", "-apple-system", "Segoe UI", "sans-serif";
+  --font-mono: "SFMono-Regular", "Menlo", "Consolas", "monospace";
+
+  --radius-bento: 10px;
+}
+
+@layer base {
+  body {
+    background-color: #1a1b2e;
+    color: #c0caf5;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+
+  ::selection {
+    background-color: rgba(122, 162, 247, 0.2);
+    color: #7aa2f7;
+  }
+}
+
+/* ─── Component utilities (registered via @utility for Tailwind v4) ─────────── */
+
+@utility glass {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background-color: rgba(34, 36, 54, 0.8);
+  border: 1px solid #363b54;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+@utility glass-card {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background-color: #222436;
+  border: 1px solid #363b54;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-bento);
+  transition: all 0.3s;
+}
+
+@utility glass-card-hover {
+  &:hover {
+    background-color: #292d42;
+    border-color: rgba(122, 162, 247, 0.25);
+    transform: scale(1.015);
+    box-shadow: 0 0 20px rgba(122, 162, 247, 0.10);
+  }
+}
+
+@utility nav-pill {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background-color: rgba(26, 27, 46, 0.88);
+  border: 1px solid #363b54;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  position: fixed;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  border-radius: 6px;
+  z-index: 50;
+}
+
+@utility nav-item {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.3s;
+  position: relative;
+  color: #7982a9;
+  &:hover {
+    color: #c0caf5;
+
+  }
+}
+
+@utility nav-item-active {
+  color: #c0caf5;
+  box-shadow: 0 0 20px rgba(122, 162, 247, 0.12);
+}
+
+@utility text-shimmer {
+  background: linear-gradient(90deg, #c0caf5 25%, #7aa2f7 50%, #c0caf5 75%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 4s linear infinite;
+}
+
+@utility custom-scrollbar {
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb {
+    background-color: #363b54;
+    border-radius: 9999px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: #414868;
+  }
+}
+
+/* Global scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background-color: #1a1b2e; }
+::-webkit-scrollbar-thumb { background-color: #363b54; border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background-color: #414868; }
+
+@keyframes shimmer {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}

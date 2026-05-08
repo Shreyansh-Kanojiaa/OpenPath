@@ -1,0 +1,791 @@
+import { useState, useEffect, useRef } from 'react'
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
+import LandingPage from './LandingPage'
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DESIGN SYSTEM & UTILS
+// ─────────────────────────────────────────────────────────────────────────────
+const API = 'http://localhost:8000'
+
+const FADE_UP = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] }
+}
+
+const BENTO_ITEM = {
+  initial: { opacity: 0, scale: 0.95 },
+  whileInView: { opacity: 1, scale: 1 },
+  viewport: { once: true },
+  transition: { duration: 0.4, ease: "easeOut" }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ICONS (Clean, minimal line style)
+// ─────────────────────────────────────────────────────────────────────────────
+const Icon = ({ children, className = "w-5 h-5" }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    {children}
+  </svg>
+)
+
+const IcoGrid = () => <Icon><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></Icon>
+const IcoCompass = () => <Icon><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></Icon>
+const IcoPlus = () => <Icon><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></Icon>
+const IcoBack = () => <Icon><polyline points="15 18 9 12 15 6"/></Icon>
+const IcoCheck = () => <Icon className="w-4 h-4"><polyline points="20 6 9 17 4 12"/></Icon>
+const IcoLogout = () => <Icon><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></Icon>
+const IcoUser = () => <Icon><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></Icon>
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PRIMITIVES
+// ─────────────────────────────────────────────────────────────────────────────
+function Badge({ children, variant = 'cyan' }) {
+  const styles = {
+    cyan: 'bg-cyan/10 border-cyan/20 text-cyan',
+    success: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
+    danger: 'bg-rose-500/10 border-rose-500/20 text-rose-400',
+    muted: 'bg-slate-500/10 border-slate-500/20 text-slate-400',
+  }
+  return (
+    <span className={`text-[10px] uppercase tracking-widest px-2 py-0.5 rounded border font-mono ${styles[variant] || styles.cyan}`}>
+      {children}
+    </span>
+  )
+}
+
+function ProgressBar({ value = 0, className = "" }) {
+  return (
+    <div className={`w-full h-1.5 bg-white/5 rounded-full overflow-hidden ${className}`}>
+      <motion.div 
+        initial={{ width: 0 }}
+        whileInView={{ width: `${Math.min(value, 1) * 100}%` }}
+        transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+        className="h-full bg-gradient-to-r from-cyan-500 to-cyan-300 rounded-full shadow-[0_0_10px_rgba(34,211,238,0.3)]"
+      />
+    </div>
+  )
+}
+
+function Button({ children, onClick, variant = 'primary', className = "", disabled = false, type = 'button' }) {
+  const styles = {
+    primary: 'bg-cyan text-charcoal-900 font-semibold hover:shadow-cyan-glow hover:scale-[1.02]',
+    outline: 'bg-transparent border border-white/10 text-white hover:bg-white/5',
+    ghost: 'bg-transparent text-slate-400 hover:text-white',
+    danger: 'bg-transparent border border-rose-500/30 text-rose-400 hover:bg-rose-500/10',
+  }
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={disabled}
+      className={`px-6 py-2.5 rounded-full text-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${styles[variant]} ${className}`}
+    >
+      {children}
+    </button>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPONENTS
+// ─────────────────────────────────────────────────────────────────────────────
+
+function NavPill({ active, setPage, user, onLogout }) {
+  const [showUser, setShowUser] = useState(false)
+  const navItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: <IcoGrid /> },
+    { id: 'discover', label: 'Discover', icon: <IcoCompass /> },
+    { id: 'generate', label: 'Generate', icon: <IcoPlus /> },
+  ]
+
+  return (
+    <nav className="nav-pill">
+      <div className="flex items-center gap-1">
+        {navItems.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => { setPage(item.id); setShowUser(false) }}
+            className={`nav-item ${active === item.id ? 'nav-item-active' : ''}`}
+          >
+            <span className="flex items-center gap-2 relative z-10">
+              {active === item.id && (
+                <motion.div
+                  layoutId="pill-bg"
+                  className="absolute inset-x-[-12px] inset-y-[-4px] bg-white/10 rounded-full z-[-1]"
+                  transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              <span className="opacity-80">{item.icon}</span>
+              <span className="hidden md:inline font-display uppercase tracking-widest text-[11px]">{item.label}</span>
+            </span>
+          </button>
+        ))}
+        <div className="w-[1px] h-6 bg-white/10 mx-2" />
+        <div className="relative">
+          <button 
+            onClick={() => setShowUser(!showUser)}
+            className="w-9 h-9 rounded-full bg-cyan/10 border border-cyan/20 flex items-center justify-center text-cyan hover:bg-cyan/20 transition-all overflow-hidden font-display text-sm font-bold"
+          >
+            {user?.username?.[0].toUpperCase() || 'U'}
+          </button>
+          <AnimatePresence>
+            {showUser && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                className="absolute right-0 top-full mt-3 w-48 glass rounded-2xl p-2 z-[60]"
+              >
+                <div className="px-3 py-2 mb-2 border-b border-white/5">
+                  <div className="text-[10px] text-slate-500 font-mono uppercase tracking-widest mb-1">Identity</div>
+                  <div className="text-sm font-display font-semibold truncate">{user?.username}</div>
+                </div>
+                <button 
+                  onClick={onLogout}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-[11px] font-mono uppercase tracking-widest text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all"
+                >
+                  <IcoLogout /> Terminate
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    </nav>
+  )
+}
+
+function AuthScreen({ onLogin }) {
+  const [mode, setMode] = useState('login')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [username, setUsername] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const [err, setErr] = useState('')
+  const [info, setInfo] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setErr(''); setInfo(''); setLoading(true)
+    try {
+      if (mode === 'login') {
+        const res = await fetch(`${API}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.detail || 'Login failed')
+        localStorage.setItem('op_token', data.access_token)
+        onLogin({ username: data.username, user_id: data.user_id, token: data.access_token })
+      } else {
+        if (password !== confirm) throw new Error('Passwords do not match')
+        const res = await fetch(`${API}/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, email, password }),
+        })
+        if (!res.ok) {
+          const data = await res.json()
+          throw new Error(data.detail || 'Registration failed')
+        }
+        setInfo('Account created! Initialize access via Sign In.')
+        setMode('login')
+      }
+    } catch (e) {
+      setErr(e.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen grid lg:grid-cols-2 bg-charcoal-950">
+      <div className="hidden lg:flex flex-col justify-center p-20 relative overflow-hidden bg-charcoal-900 border-r border-white/5">
+        <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-cyan/5 blur-[120px] rounded-full" />
+        <motion.div {...FADE_UP} className="relative z-10">
+          <Badge>System Core v2.5</Badge>
+          <h1 className="text-8xl font-bold mt-8 mb-10 leading-[0.9] font-display">
+            Pathfinding <br />
+            <span className="text-shimmer">Architected.</span>
+          </h1>
+          <p className="text-xl text-slate-400 max-w-md leading-relaxed border-l border-cyan/30 pl-8 font-sans">
+            OpenPath synthesizes high-performance learning lattice for any domain. 
+            Real-time resource mapping and mastery tracking.
+          </p>
+        </motion.div>
+      </div>
+
+      <div className="flex items-center justify-center p-8">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="w-full max-w-md"
+        >
+          <div className="glass-card p-10 bg-charcoal-900/50">
+            <div className="flex bg-white/5 p-1 rounded-full mb-12 shadow-inner">
+              {['login', 'register'].map((m) => (
+                <button
+                  key={m}
+                  onClick={() => { setMode(m); setErr(''); setInfo('') }}
+                  className={`flex-1 py-2.5 text-[10px] uppercase tracking-[0.2em] font-display font-bold rounded-full transition-all ${mode === m ? 'bg-cyan text-charcoal-900 shadow-cyan-glow' : 'text-slate-500'}`}
+                >
+                  {m === 'login' ? 'Access' : 'Initialize'}
+                </button>
+              ))}
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-8">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={mode}
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  className="space-y-8"
+                >
+                  {mode === 'register' && (
+                    <div className="space-y-3">
+                      <label className="text-[10px] uppercase tracking-[0.3em] text-slate-500 font-mono ml-4">Identifier</label>
+                      <input 
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-sm font-mono focus:outline-none focus:border-cyan/50 focus:ring-1 focus:ring-cyan/20 transition-all"
+                        placeholder="operator_01"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                      />
+                    </div>
+                  )}
+                  <div className="space-y-3">
+                    <label className="text-[10px] uppercase tracking-[0.3em] text-slate-500 font-mono ml-4">Registry Email</label>
+                    <input 
+                      type="email"
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-sm font-mono focus:outline-none focus:border-cyan/50 focus:ring-1 focus:ring-cyan/20 transition-all"
+                      placeholder="root@cluster.io"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <label className="text-[10px] uppercase tracking-[0.3em] text-slate-500 font-mono ml-4">Passkey</label>
+                    <input 
+                      type="password"
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-sm font-mono focus:outline-none focus:border-cyan/50 focus:ring-1 focus:ring-cyan/20 transition-all"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                  </div>
+                  {mode === 'register' && (
+                    <div className="space-y-3">
+                      <label className="text-[10px] uppercase tracking-[0.3em] text-slate-500 font-mono ml-4">Verify Passkey</label>
+                      <input 
+                        type="password"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-sm font-mono focus:outline-none focus:border-cyan/50 focus:ring-1 focus:ring-cyan/20 transition-all"
+                        placeholder="••••••••"
+                        value={confirm}
+                        onChange={(e) => setConfirm(e.target.value)}
+                      />
+                    </div>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+
+              {info && <p className="text-[11px] text-emerald-400 font-mono px-4">{info}</p>}
+              {err && <p className="text-[11px] text-rose-400 font-mono px-4">{err}</p>}
+
+              <Button type="submit" disabled={loading} className="w-full py-5 mt-6 font-display text-base tracking-[0.2em] uppercase">
+                {loading ? 'Bridging...' : mode === 'login' ? 'Sync Profile' : 'Generate Identity'}
+              </Button>
+            </form>
+          </div>
+        </motion.div>
+      </div>
+    </div>
+  )
+}
+
+function Dashboard({ courses, onSelectCourse, user }) {
+  const totalCompleted = courses.reduce((acc, c) => acc + c.modules.filter(m => m.is_completed || m.is_skipped).length, 0)
+  
+  return (
+    <div className="max-w-7xl mx-auto px-8 py-32 w-full min-h-screen">
+      <header className="mb-24 flex flex-col md:flex-row md:items-end justify-between gap-12">
+        <motion.div {...FADE_UP}>
+          <div className="flex items-center gap-6 mb-6">
+            <div className="w-16 h-16 rounded-3xl bg-cyan/10 border border-cyan/20 flex items-center justify-center text-cyan text-2xl font-display font-black shadow-cyan-glow/10">
+              {user?.username?.[0].toUpperCase()}
+            </div>
+            <div className="space-y-1">
+              <Badge>Active Node</Badge>
+              <div className="text-[10px] font-mono text-slate-600 uppercase tracking-[0.3em]">Operational Status: Nominal</div>
+            </div>
+          </div>
+          <h2 className="text-6xl font-black font-display tracking-tightest">Archive_{user?.username}</h2>
+        </motion.div>
+        
+        <motion.div 
+          initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} 
+          className="flex gap-16 border-l border-white/10 pl-16 py-2"
+        >
+          <div>
+            <div className="text-5xl font-display font-black text-white leading-none mb-2">{courses.length}</div>
+            <div className="text-[10px] uppercase tracking-[0.4em] text-slate-500 font-mono">Knowledge_Tracks</div>
+          </div>
+          <div>
+            <div className="text-5xl font-display font-black text-cyan leading-none mb-2">{totalCompleted}</div>
+            <div className="text-[10px] uppercase tracking-[0.4em] text-slate-500 font-mono">Nodes_Mastered</div>
+          </div>
+        </motion.div>
+      </header>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-8">
+        {courses.map((course, i) => {
+          const completed = course.modules.filter(m => m.is_completed || m.is_skipped).length
+          const total = course.modules.length
+          const progress = completed / total
+          const isLarge = i === 0 || i % 7 === 0
+
+          return (
+            <motion.div
+              key={course.id}
+              {...BENTO_ITEM}
+              transition={{ delay: (i % 8) * 0.1 }}
+              onClick={() => onSelectCourse(course)}
+              className={`glass-card p-10 flex flex-col justify-between cursor-pointer group hover:bg-white/[0.08] hover:border-white/20 hover:scale-[1.02] hover:shadow-cyan-glow/20 transition-all duration-500 overflow-hidden relative ${isLarge ? 'md:col-span-2 lg:col-span-3 min-h-[420px]' : 'md:col-span-2 lg:col-span-2 min-h-[420px]'}`}
+            >
+              <div className="absolute -top-10 -right-10 w-40 h-40 bg-cyan/5 blur-[80px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+              
+              <div className="space-y-8 relative z-10">
+                <div className="flex items-center justify-between">
+                  <Badge variant={progress === 1 ? 'success' : 'cyan'}>
+                    {progress === 1 ? 'Synapse_Full' : course.time_commitment}
+                  </Badge>
+                  <span className="text-[11px] font-mono text-slate-500 tracking-tighter">{Math.round(progress * 100)}% Lvl</span>
+                </div>
+                <h3 className={`font-black leading-[0.95] font-display transition-colors group-hover:text-cyan ${isLarge ? 'text-6xl uppercase' : 'text-4xl'}`}>
+                  {course.skill_name}
+                </h3>
+              </div>
+
+              <div className="space-y-10 relative z-10">
+                <div className="flex flex-wrap gap-2">
+                  {course.modules.slice(0, 16).map((m, mi) => (
+                    <div 
+                      key={mi} 
+                      className={`w-3 h-3 rounded-full border border-charcoal-900 transition-all duration-700 ${m.is_completed || m.is_skipped ? 'bg-cyan shadow-[0_0_12px_rgba(34,211,238,0.6)]' : 'bg-white/10'}`} 
+                    />
+                  ))}
+                  {course.modules.length > 16 && <span className="text-[10px] text-slate-600 self-center ml-2 font-black">+{course.modules.length - 16}</span>}
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between text-[10px] uppercase font-mono tracking-[0.2em] text-slate-500">
+                    <span>Lattice Progress</span>
+                    <span>{completed} / {total} Units</span>
+                  </div>
+                  <ProgressBar value={progress} />
+                </div>
+              </div>
+            </motion.div>
+          )
+        })}
+        
+        <motion.button
+          {...BENTO_ITEM}
+          transition={{ delay: (courses.length % 8) * 0.1 }}
+          className="md:col-span-2 lg:col-span-1 rounded-bento border-2 border-dashed border-white/5 hover:border-cyan/40 hover:bg-cyan/5 transition-all flex flex-col items-center justify-center gap-8 group cursor-pointer min-h-[420px]"
+        >
+          <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center text-slate-500 group-hover:text-cyan group-hover:scale-110 group-hover:bg-cyan/10 transition-all duration-700 group-hover:shadow-cyan-glow/30">
+            <IcoPlus />
+          </div>
+          <div className="text-center">
+            <span className="block text-[11px] uppercase tracking-[0.3em] font-mono text-slate-500 group-hover:text-cyan transition-all duration-500">Initialize</span>
+            <span className="block text-[11px] uppercase tracking-[0.3em] font-mono text-slate-500 group-hover:text-cyan transition-all duration-500">New_Path</span>
+          </div>
+        </motion.button>
+      </div>
+    </div>
+  )
+}
+
+function CourseView({ course, onBack, onComplete, onSaveNotes, token }) {
+  const mods = course.modules
+  const initMod = mods.find(m => !m.is_completed && !m.is_skipped) || mods[0]
+  const [activeId, setActiveId] = useState(initMod?.id)
+  const activeMod = mods.find(m => m.id === activeId)
+  const completedCount = mods.filter(m => m.is_completed || m.is_skipped).length
+  const progress = completedCount / mods.length
+
+  return (
+    <div className="flex h-screen w-full overflow-hidden bg-charcoal-950 pt-24">
+      <aside className="w-96 border-r border-white/5 flex flex-col glass bg-charcoal-900/40 backdrop-blur-3xl relative z-20">
+        <div className="p-10 border-b border-white/5">
+          <button onClick={onBack} className="flex items-center gap-3 text-slate-600 hover:text-white transition-all text-[10px] uppercase tracking-[0.3em] font-mono mb-10 group">
+            <span className="group-hover:-translate-x-2 transition-transform duration-500"><IcoBack /></span> System_Root
+          </button>
+          <h2 className="text-3xl font-black font-display leading-[0.95] mb-8 uppercase tracking-tighter">{course.skill_name}</h2>
+          <div className="space-y-4">
+             <div className="flex justify-between text-[10px] font-mono text-slate-500 uppercase tracking-[0.2em]">
+               <span>Lattice_Mastery</span>
+               <span className="text-cyan">{Math.round(progress * 100)}%</span>
+             </div>
+             <ProgressBar value={progress} />
+          </div>
+        </div>
+        
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-2">
+          {mods.map((m, i) => {
+            const isActive = m.id === activeId
+            const isDone = m.is_completed || m.is_skipped
+            return (
+              <button
+                key={m.id}
+                onClick={() => setActiveId(m.id)}
+                className={`w-full text-left p-5 rounded-3xl border transition-all duration-500 group relative overflow-hidden ${
+                  isActive 
+                    ? 'bg-cyan/10 border-cyan/40 text-white shadow-cyan-glow/10' 
+                    : 'bg-transparent border-transparent text-slate-500 hover:bg-white/5 hover:text-slate-200'
+                }`}
+              >
+                <div className="flex justify-between items-center mb-3">
+                  <span className={`text-[9px] font-mono tracking-[0.2em] px-2 py-1 rounded-lg border ${
+                    isDone ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10' : 
+                    isActive ? 'border-cyan/40 text-cyan bg-cyan/10' : 'border-white/10 text-slate-700'
+                  }`}>
+                    NODE_{String(i + 1).padStart(2, '0')}
+                  </span>
+                  {isDone && <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-emerald-400"><IcoCheck /></motion.span>}
+                </div>
+                <div className={`text-sm font-bold font-display leading-snug tracking-tight ${isActive ? 'text-white' : 'group-hover:text-slate-100'}`}>
+                  {m.title}
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      </aside>
+
+      <main className="flex-1 overflow-y-auto custom-scrollbar relative">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeId}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="max-w-5xl mx-auto p-16 lg:p-24"
+          >
+            {activeMod && (
+              <div className="space-y-16">
+                <header>
+                  <div className="flex items-center gap-6 mb-8 text-slate-600">
+                    <Badge variant={activeMod.is_completed ? 'success' : 'cyan'}>
+                      Unit_{activeMod.order_index}
+                    </Badge>
+                    <div className="h-0.5 w-8 bg-white/10" />
+                    <span className="font-mono text-[10px] uppercase tracking-[0.3em]">
+                      Buffer_Size: {Math.floor(activeMod.video_duration / 60)}m {activeMod.video_duration % 60}s
+                    </span>
+                  </div>
+                  <h1 className="text-7xl font-black font-display leading-[0.85] mb-10 tracking-tightest uppercase">{activeMod.title}</h1>
+                  <p className="text-2xl text-slate-400 leading-relaxed font-sans max-w-3xl">{activeMod.description}</p>
+                </header>
+
+                <div className="aspect-video w-full rounded-[40px] overflow-hidden border border-white/5 shadow-2xl relative bg-black shadow-cyan-glow/5 group">
+                  {activeMod.video_id ? (
+                    <>
+                    <iframe
+                      width="100%" height="100%"
+                      src={`https://www.youtube.com/embed/${activeMod.video_id}?enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`}
+                      title={activeMod.title} frameBorder="0" allowFullScreen
+                    />
+                    {!activeMod.is_completed && !activeMod.is_skipped && (
+                      <div className="absolute top-10 right-10 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                        <Button
+                          onClick={() => onComplete(activeMod.id, 'watched')}
+                          className="shadow-2xl px-10 py-5 text-base border-2 border-charcoal-900"
+                        >
+                          Unlock Mastery
+                        </Button>
+                      </div>
+                    )}
+                    </>
+                  ) : (
+                    <div className="w-full h-full glass-card flex items-center justify-center flex-col gap-6 text-slate-600 bg-charcoal-900">
+                      <motion.div animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: 'linear' }} className="w-20 h-20 rounded-full border border-dashed border-white/20 flex items-center justify-center opacity-30"><IcoCompass /></motion.div>
+                      <p className="font-mono text-xs uppercase tracking-[0.4em]">Querying_Media_Cluster...</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid md:grid-cols-5 gap-10">
+                  <div className="md:col-span-3 glass-card p-10 space-y-8 bg-charcoal-900/60 transition-all hover:bg-charcoal-900/80">
+                    <h4 className="text-xl font-black font-display tracking-widest uppercase flex items-center gap-4">
+                      <span className="text-cyan"><IcoPlus /></span> Synapse_log
+                    </h4>
+                    <textarea 
+                      placeholder="Synthesize core insights here..."
+                      defaultValue={activeMod.notes || ''}
+                      onBlur={(e) => onSaveNotes(activeMod.id, e.target.value)}
+                      className="w-full h-48 bg-white/5 border border-white/5 rounded-3xl p-6 text-sm font-mono focus:outline-none focus:border-cyan/40 transition-all resize-none shadow-inner"
+                    />
+                    <div className="flex justify-between items-center px-2">
+                       <div className="flex gap-1">
+                         {[1,2,3].map(i => <div key={i} className="w-1 h-1 rounded-full bg-cyan/40 animate-pulse" style={{ animationDelay: `${i*200}ms` }} />)}
+                       </div>
+                      <span className="text-[10px] font-mono text-slate-600 uppercase tracking-[0.3em]">Encrypted_Sync</span>
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-2 glass-card p-10 flex flex-col justify-center items-center text-center space-y-8 bg-cyan/5 border-cyan/10 group cursor-pointer hover:bg-cyan/10 transition-duration-700">
+                    <div className="w-20 h-20 rounded-3xl bg-cyan/10 flex items-center justify-center text-cyan group-hover:scale-110 transition-transform duration-700"><IcoCompass /></div>
+                    <div className="space-y-4">
+                      <h4 className="text-lg font-black font-display uppercase tracking-[0.2em] text-white">Neural_Skip</h4>
+                      <p className="text-xs text-slate-500 font-mono tracking-wide leading-relaxed px-4">Pass the competency verification to bypass this node instantly.</p>
+                    </div>
+                    <Button variant="outline" className="border-cyan/30 text-cyan hover:bg-cyan shadow-none group-hover:shadow-cyan-glow/20 px-10">
+                      Begin_Sync
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </main>
+    </div>
+  )
+}
+
+function DiscoverPage({ token, onEnroll }) {
+  const COMMUNITY_TRACKS = [
+    { id:101, skill_name:'Advanced Rust Systems', owner:'oxide_core', modules:12, level:'Expert' },
+    { id:102, skill_name:'Generative AI Design', owner:'neural_flow', modules:8, level:'Complex' },
+    { id:103, skill_name:'Orbital Mechanics', owner:'spacewalk', modules:15, level:'Extreme' },
+    { id:104, skill_name:'Surgical Compositing', owner:'zero_depth', modules:6, level:'Advanced' },
+    { id:105, skill_name:'Protocol Analysis', owner:'shadow_net', modules:10, level:'Complex' },
+  ]
+
+  return (
+    <div className="max-w-7xl mx-auto px-8 py-32 w-full min-h-screen">
+      <header className="mb-24 px-4 overflow-hidden relative">
+        <div className="absolute -top-20 -left-20 w-80 h-80 bg-cyan/5 blur-[100px] rounded-full pointer-events-none" />
+        <motion.div {...FADE_UP}>
+          <Badge>Community_Registry</Badge>
+          <h1 className="text-8xl font-black mt-8 font-display uppercase tracking-tightest leading-none">Marketplace</h1>
+          <p className="text-lg text-slate-500 font-mono tracking-[0.2em] mt-6 ml-2">Available Lattice Structures: {COMMUNITY_TRACKS.length.toString().padStart(2, '0')}</p>
+        </motion.div>
+      </header>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 px-4">
+        {COMMUNITY_TRACKS.map((c, i) => (
+          <motion.div
+            key={c.id}
+            {...BENTO_ITEM}
+            transition={{ delay: i * 0.05 }}
+            className="glass-card p-10 flex flex-col justify-between h-[340px] glass-card-hover group border-white/5 bg-charcoal-900/40"
+          >
+            <div>
+              <div className="flex justify-between items-start mb-8 font-mono text-[10px] tracking-[0.3em] uppercase">
+                <span className="text-slate-600">{c.modules} Units</span>
+                <span className={c.level === 'Extreme' ? 'text-rose-500' : 'text-cyan/80'}>{c.level}</span>
+              </div>
+              <h3 className="text-4xl font-black font-display leading-[0.95] uppercase tracking-tighter group-hover:text-cyan group-hover:scale-[1.02] origin-left transition-all duration-500">{c.skill_name}</h3>
+              <p className="text-[10px] font-mono text-slate-600 mt-6 uppercase tracking-[0.4em]">Node_{c.owner}</p>
+            </div>
+            <div className="flex justify-between items-center">
+               <div className="flex gap-1">
+                 {[1,2,3].map(j => <div key={j} className="w-1 h-3 bg-white/10 rounded-full" />)}
+               </div>
+              <Button variant="outline" className="text-[10px] uppercase tracking-[0.3em] px-8 py-3 border-white/10 group-hover:border-cyan/50 transition-colors">Clone_Path</Button>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function GeneratePage({ token, onGenerate }) {
+  const [skill, setSkill] = useState('')
+  const [level, setLevel] = useState(1)
+  const [loading, setLoading] = useState(false)
+
+  const handleGenerate = () => {
+    if (!skill) return
+    setLoading(true)
+    setTimeout(() => {
+      setLoading(false)
+      onGenerate()
+    }, 3000)
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto px-8 py-32 w-full text-center flex flex-col items-center justify-center min-h-screen">
+      <motion.div {...FADE_UP} className="w-full">
+        <div className="inline-flex items-center gap-4 glass px-6 py-2.5 rounded-full border-cyan/20 text-cyan mb-12 shadow-cyan-glow/10">
+          <motion.span animate={{ rotate: 360 }} transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}><IcoCompass /></motion.span>
+          <span className="text-[11px] font-mono uppercase tracking-[0.4em] font-black">Neural_Architect_v2.5</span>
+        </div>
+        <h1 className="text-8xl md:text-9xl font-black font-display mb-12 leading-[0.8] tracking-tightest uppercase">Path <br/><span className="text-shimmer">Synthesis</span></h1>
+        
+        <div className="glass-card p-16 space-y-16 text-left relative overflow-hidden bg-charcoal-900/60 backdrop-blur-2xl border-white/10 shadow-2xl">
+          <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none scale-[5] translate-x-12 translate-y-[-20%]"><IcoPlus /></div>
+          
+          <div className="space-y-6">
+            <label className="text-[11px] uppercase tracking-[0.5em] font-mono text-slate-600 block px-4">Subject_Objective</label>
+            <input 
+              placeholder="e.g. SYSTEMS_RUST, QUANTUM_OS, ARCHITECTURAL_PHOTOGRAPHY..."
+              className="w-full bg-white/5 border border-white/10 rounded-3xl p-8 text-3xl font-display font-black uppercase tracking-tighter focus:outline-none focus:border-cyan/50 focus:ring-1 focus:ring-cyan/20 transition-all duration-700 shadow-inner"
+              value={skill}
+              onChange={(e) => setSkill(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-10">
+             <div className="flex justify-between items-end px-4">
+               <label className="text-[11px] uppercase tracking-[0.5em] font-mono text-slate-600 block">Baseline_Competency</label>
+               <span className="text-4xl font-display font-black text-cyan leading-none">{level}/10</span>
+             </div>
+             <input 
+               type="range" min="1" max="10" 
+               className="w-full h-2 bg-white/5 rounded-full appearance-none cursor-pointer accent-cyan shadow-inner"
+               value={level}
+               onChange={(e) => setLevel(e.target.value)}
+             />
+             <div className="flex justify-between text-[10px] font-mono text-slate-700 uppercase tracking-[0.4em] px-4 font-black">
+               <span>INITIATE</span>
+               <span>EXPERT</span>
+             </div>
+          </div>
+
+          <Button 
+            disabled={!skill || loading} 
+            onClick={handleGenerate}
+            className="w-full py-8 text-xl font-display font-black tracking-[0.4em] uppercase hover:tracking-[0.6em] transition-all duration-1000 mt-6 shadow-cyan-glow/20"
+          >
+            {loading ? 'Synthesizing_Lattice...' : 'Initialize_Arch_Cycle'}
+          </Button>
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
+async function fetchCourses(token) {
+  try {
+    const res = await fetch(`${API}/courses`, { headers: { Authorization: `Bearer ${token}` } })
+    if (!res.ok) return []
+    const list = await res.json()
+    const detailed = await Promise.all(list.map(async c => {
+      try {
+        const r = await fetch(`${API}/courses/${c.id}`, { headers: { Authorization: `Bearer ${token}` } })
+        if (!r.ok) return { ...c, modules: [] }
+        const d = await r.json()
+        return { ...d.course, modules: d.modules || [] }
+      } catch { return { ...c, modules: [] } }
+    }))
+    return detailed
+  } catch { return [] }
+}
+
+export default function App() {
+  const [user, setUser] = useState(null)
+  const [page, setPage] = useState('dashboard')
+  const [courses, setCourses] = useState([])
+  const [selected, setSelected] = useState(null)
+  const [showLanding, setShowLanding] = useState(true)
+
+  useEffect(() => {
+    const token = localStorage.getItem('op_token')
+    if (token && !user) {
+      // Simple decode or just assuming it's valid for this mock/demo
+      // Normally we'd fetch user info here
+    }
+  }, [])
+
+  const login = async userData => {
+    setUser(userData)
+    setPage('dashboard')
+    const userCourses = await fetchCourses(userData.token)
+    setCourses(userCourses)
+  }
+
+  const logout = () => {
+    setUser(null); setCourses([]); setSelected(null); setPage('dashboard')
+    localStorage.removeItem('op_token')
+  }
+
+  const refreshCourses = async () => {
+    if (!user?.token) return
+    const userCourses = await fetchCourses(user.token)
+    setCourses(userCourses)
+  }
+
+  const completeModule = async (modId, type) => {
+    setCourses(prev => prev.map(c => ({
+      ...c,
+      modules: c.modules.map(m => m.id !== modId ? m : { ...m, is_completed: true, is_skipped: type === 'skipped' })
+    })))
+    if (selected) {
+      setSelected(prev => ({
+        ...prev,
+        modules: prev.modules.map(m => m.id !== modId ? m : { ...m, is_completed: true, is_skipped: type === 'skipped' })
+      }))
+    }
+    try {
+      await fetch(`${API}/${type === 'skipped' ? 'submit-quiz?score=5&' : 'modules/'}module_id=${modId}${type !== 'skipped' ? '/complete' : ''}`, {
+        method: 'POST', headers: { Authorization: `Bearer ${user.token}` }
+      })
+    } catch (e) { console.error(e) }
+  }
+
+  const saveNotes = async (modId, text) => {
+    try {
+      await fetch(`${API}/modules/${modId}/notes`, {
+        method: 'PATCH', headers: { Authorization: `Bearer ${user.token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes: text }),
+      })
+    } catch (e) { console.error(e) }
+  }
+
+  if (showLanding) return <LandingPage onGetStarted={() => setShowLanding(false)} />
+  if (!user) return <AuthScreen onLogin={login} />
+
+  return (
+    <div className="min-h-screen bg-charcoal-950 flex flex-col font-sans text-slate-200">
+      <NavPill active={page} setPage={setPage} user={user} onLogout={logout} />
+      
+      <main className="flex-1 overflow-x-hidden flex flex-col relative">
+        <div className="fixed inset-0 bg-charcoal-900 opacity-20 pointer-events-none">
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan/20 to-transparent" />
+          <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan/10 to-transparent" />
+        </div>
+        
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={page}
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="flex-1 flex flex-col relative z-10"
+          >
+            {page === 'dashboard' && <Dashboard courses={courses} onSelectCourse={(c) => { setSelected(c); setPage('course') }} user={user} />}
+            {page === 'course' && selected && (
+              <CourseView 
+                course={selected} 
+                onBack={() => setPage('dashboard')} 
+                onComplete={completeModule} 
+                onSaveNotes={saveNotes}
+                token={user.token}
+              />
+            )}
+            {page === 'discover' && <DiscoverPage token={user.token} onEnroll={refreshCourses} />}
+            {page === 'generate' && <GeneratePage token={user.token} onGenerate={() => { refreshCourses(); setPage('dashboard') }} />}
+          </motion.div>
+        </AnimatePresence>
+      </main>
+    </div>
+  )
+}
