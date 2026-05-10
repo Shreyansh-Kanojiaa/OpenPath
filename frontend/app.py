@@ -4,8 +4,8 @@ import ui_components as ui
 
 # ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="OpenPath — AI Learning Platform",
-    page_icon="🎓",
+    page_title="OpenPath — Curriculum Engine",
+    page_icon="⚙️",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -32,20 +32,23 @@ for key, default in {
 
 def render_auth_page():
     st.markdown(
-        "<h1 style='text-align:center;margin-top:40px;'>🎓 OpenPath</h1>"
-        "<p style='text-align:center;color:#8b949e;font-size:18px;'>AI-powered learning. Any skill. At your pace.</p>",
+        "<div style='margin-top: 60px; margin-bottom: 40px; display: flex; flex-direction: column; align-items: flex-start; gap: 8px;'>"
+        "<div class='eyebrow' style='color: #7aa2f7; letter-spacing: 0.1em;'>Cognitive Workspace</div>"
+        "<h1 style='margin: 0; font-size: 48px; font-weight: 700; letter-spacing: -0.03em;'>OpenPath</h1>"
+        "<p style='margin: 0; color: #9aa3bf; font-size: 18px; max-width: 500px; line-height: 1.5;'>A mastery environment for deep learning. Build skills with focus and atmospheric clarity.</p>"
+        "</div>",
         unsafe_allow_html=True,
     )
     st.markdown("---")
 
-    col_l, col_c, col_r = st.columns([1, 1.6, 1])
-    with col_c:
-        login_tab, signup_tab = st.tabs(["🔑 Login", "📝 Sign Up"])
+    col_l, col_c = st.columns([1, 1.2])
+    with col_l:
+        login_tab, signup_tab = st.tabs(["⚙️ Authenticate", "🛠️ Initialize Profile"])
 
         # ── Login ────────────────────────────────────────────────────────────
         with login_tab:
             with st.form("login_form"):
-                st.markdown("### Welcome back")
+                st.markdown("### System Access")
                 email = st.text_input("Email", placeholder="you@example.com", key="login_email")
                 password = st.text_input("Password", type="password", placeholder="••••••••", key="login_pw")
                 submitted = st.form_submit_button("Login", use_container_width=True)
@@ -129,14 +132,14 @@ def render_auth_page():
 
 def render_sidebar():
     with st.sidebar:
-        st.markdown(f"### 👤 {st.session_state.username}")
-        if st.button("🚪 Logout", use_container_width=True):
+        st.markdown(f"### ⚙️ User: {st.session_state.username}")
+        if st.button("🔌 Terminate Session", use_container_width=True):
             for k in ["token", "user_id", "username", "course_id", "watch_start_times"]:
                 st.session_state[k] = None if k != "watch_start_times" else {}
             st.rerun()
 
         st.markdown("---")
-        st.header("📚 My Courses")
+        st.header("📊 Active Paths")
 
         try:
             courses_res = ui.api_get("/courses")
@@ -145,19 +148,19 @@ def render_sidebar():
                 if user_courses:
                     course_options = {f"{c['skill_name']} (ID:{c['id']})": c["id"] for c in user_courses}
                     selected = st.selectbox(
-                        "Load a course",
+                        "Load a path",
                         options=["-- Select --"] + list(course_options.keys()),
                         key="course_selectbox",
                     )
                     if selected != "-- Select --":
                         st.session_state.course_id = course_options[selected]
                 else:
-                    st.caption("No courses yet. Generate one below!")
+                    st.caption("No paths initialized. Build one below.")
         except Exception:
             pass
 
         st.markdown("---")
-        st.header("✨ New Course")
+        st.header("🛠️ Initialize Path")
         skill_input = st.text_input("Skill to Learn", placeholder="e.g., Welding, PCB Design")
         level_input = st.slider("Current Skill Level (/10)", 0, 10, 0)
         time_input = st.selectbox("Time Commitment", ["2 hours/week", "5 hours/week", "10 hours/week", "Full-time"])
@@ -166,11 +169,11 @@ def render_sidebar():
             ["Crash Course (3 modules)", "Standard (5 modules)", "In-Depth (8 modules)", "Comprehensive (12 modules)"],
         )
 
-        if st.button("🚀 Generate Course", use_container_width=True):
+        if st.button("⚙️ Build Path", use_container_width=True):
             if not skill_input:
                 st.error("Please enter a skill.")
             else:
-                with st.spinner("Curating syllabus & sourcing videos (10–20s)..."):
+                with st.spinner("Curriculum Engine processing... (10–20s)"):
                     try:
                         res = ui.api_post(
                             "/generate-course",
@@ -178,7 +181,7 @@ def render_sidebar():
                         )
                         if res.status_code == 200:
                             st.session_state.course_id = res.json()["id"]
-                            st.success("Course generated! 🎉")
+                            st.success("Path generated successfully.")
                             st.rerun()
                         else:
                             st.error(f"Error: {res.text}")
@@ -191,52 +194,63 @@ def render_sidebar():
 # ─────────────────────────────────────────────────────────────────────────────
 
 def render_discover_tab():
-    st.header("🌍 Community Course Marketplace")
-    st.markdown("Browse syllabi created by other learners. Enroll to add a private copy to your dashboard.")
+    st.header("🌍 Central Marketplace")
+    st.markdown("Access community-generated paths. Import to local workspace.")
 
     try:
         res = ui.api_get("/courses/public", public=True)
         if res.status_code != 200:
-            st.error("Could not load marketplace.")
+            st.error("System error: Could not load marketplace.")
             return
 
         public_courses = res.json()
         if not public_courses:
-            st.info("No public courses yet. Be the first! Go to your course and toggle visibility to Public.")
+            st.info("No public paths available. Toggle visibility to Public in your workspace to contribute.")
             return
 
         # Filter / Search
-        search_q = st.text_input("🔍 Search marketplace", placeholder="e.g., Python, Welding, PCB...", key="discover_search")
+        search_q = st.text_input("🔍 Query marketplace", placeholder="e.g., Python, Welding, PCB...", key="discover_search")
         filtered = [c for c in public_courses if search_q.lower() in c["skill_name"].lower()] if search_q else public_courses
 
-        st.markdown(f"**{len(filtered)} course(s) found**")
-        cols = st.columns(2)
-
+        st.markdown(f"<div style='margin-bottom: 16px; color: #66708f; font-family: \"JetBrains Mono\", monospace; font-size: 12px;'>RESULTS: {len(filtered)}</div>", unsafe_allow_html=True)
+        
         for i, course in enumerate(filtered):
-            with cols[i % 2]:
+            # Row-based layout
+            col_info, col_btn = st.columns([5, 1])
+            with col_info:
                 st.markdown(
-                    f'<div class="course-card">'
-                    f'<h4 style="color:#58a6ff;margin:0 0 8px 0">📘 {course["skill_name"]}</h4>'
-                    f'<p style="margin:0;color:#8b949e;font-size:13px;">'
-                    f'👤 {course.get("owner_username","Unknown")} &nbsp;|&nbsp; '
-                    f'📦 {course.get("module_count",0)} modules &nbsp;|&nbsp; '
-                    f'⏱ {course["time_commitment"]}</p>'
+                    f'<div style="background: #222436; border: 1px solid #30363d; border-radius: 2px; padding: 16px; margin-bottom: 8px;">'
+                    f'<div style="display: flex; justify-content: space-between; align-items: flex-start;">'
+                    f'<div>'
+                    f'<h4 style="color:#e6e9f2; margin:0 0 8px 0; font-size: 16px; letter-spacing: -0.01em;">'
+                    f'{course["skill_name"]} '
+                    f'<span style="background: #1a1b2e; border: 1px solid #30363d; color: #7aa2f7; padding: 2px 6px; border-radius: 2px; font-size: 10px; font-family: \'JetBrains Mono\', monospace; margin-left: 8px;">[VERIFIED]</span>'
+                    f'</h4>'
+                    f'<div style="display: flex; gap: 16px; align-items: center; color:#66708f; font-size:12px; font-family: \'JetBrains Mono\', monospace;">'
+                    f'<span>AUTHOR:{course.get("owner_username","System")}</span>'
+                    f'<span>MODS:{course.get("module_count",0)}</span>'
+                    f'<span>DURATION:{course["time_commitment"]}</span>'
+                    f'</div>'
+                    f'</div>'
+                    f'</div>'
                     f'</div>',
                     unsafe_allow_html=True,
                 )
+            with col_btn:
+                st.markdown('<div style="height: 16px;"></div>', unsafe_allow_html=True) # alignment spacer
                 enroll_key = f"enroll_{course['id']}"
-                if st.button(f"Enroll →", key=enroll_key, use_container_width=True):
-                    with st.spinner("Adding to your dashboard..."):
+                if st.button(f"Import", key=enroll_key, use_container_width=True):
+                    with st.spinner("Importing to local workspace..."):
                         enroll_res = ui.api_post(f"/courses/{course['id']}/enroll")
                         if enroll_res.status_code == 200:
                             new_course = enroll_res.json()
                             st.session_state.course_id = new_course["id"]
-                            st.success(f"Enrolled in **{course['skill_name']}**! Loading course...")
+                            st.toast(f"Imported {course['skill_name']} successfully.")
                             st.rerun()
                         elif enroll_res.status_code == 400:
-                            st.warning("You already own this course.")
+                            st.warning("Path already exists in local workspace.")
                         else:
-                            st.error(f"Enrollment failed: {enroll_res.text}")
+                            st.error(f"Import failed: {enroll_res.text}")
 
     except requests.exceptions.ConnectionError:
         st.error("⚠️ Backend is not running.")
@@ -263,13 +277,14 @@ def render_course_view():
         modules = data["modules"]
 
         # Header
+        st.markdown(f'<div class="eyebrow" style="margin-bottom: 8px; color: #7aa2f7;">Active Workspace</div>', unsafe_allow_html=True)
         col_title, col_vis = st.columns([3, 1])
         with col_title:
-            st.header(f"📘 {course['skill_name']}")
+            st.markdown(f'<h1 style="margin-top: 0; margin-bottom: 8px; font-size: 32px; letter-spacing: -0.02em;">{course["skill_name"]}</h1>', unsafe_allow_html=True)
         with col_vis:
             is_public = course.get("is_public", False)
-            vis_label = "🌍 Public" if is_public else "🔒 Private"
-            if st.button(f"{vis_label} — Toggle", key="toggle_vis", use_container_width=True):
+            vis_label = "🌍 Public Environment" if is_public else "🔒 Private Environment"
+            if st.button(f"{vis_label}", key="toggle_vis", use_container_width=True):
                 toggle_res = ui.api_patch(
                     f"/courses/{course['id']}/visibility",
                 )
@@ -284,10 +299,19 @@ def render_course_view():
 
         # Progress bar
         completed_count = len([m for m in modules if m["is_completed"]])
-        st.progress(
-            completed_count / max(len(modules), 1),
-            text=f"Progress: {completed_count}/{len(modules)} Modules Completed",
-        )
+        pct = (completed_count / max(len(modules), 1)) * 100
+        prog_html = f"""
+        <div class="custom-progress-container" style="margin-top: 0; margin-bottom: 32px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span style="color: #9aa3bf; font-size: 13px; font-weight: 500;">Mastery Progression</span>
+                <span style="color: #7aa2f7; font-family: 'JetBrains Mono', monospace; font-size: 12px;">{completed_count}/{len(modules)} Modules</span>
+            </div>
+            <div class="custom-progress-track">
+                <div class="custom-progress-fill" style="width: {pct}%;"></div>
+            </div>
+        </div>
+        """
+        st.markdown(prog_html, unsafe_allow_html=True)
 
         # Tabs
         tab_current, tab_syllabus, tab_completed, tab_discover = st.tabs([
@@ -338,10 +362,12 @@ else:
         render_course_view()
     else:
         # Landing / Home when logged in but no course selected
-        st.title(f"Welcome back, {st.session_state.username}! 👋")
         st.markdown(
-            "Use the **sidebar** to generate a new course or load an existing one.\n\n"
-            "Or explore community courses below:"
+            f"<div style='margin-bottom: 32px;'>"
+            f"<h1 style='font-size: 32px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 8px;'>Welcome back, {st.session_state.username}</h1>"
+            f"<p style='color: #9aa3bf; font-size: 16px; margin: 0;'>Initialize a new learning workspace from the sidebar or explore the community below.</p>"
+            f"</div>",
+            unsafe_allow_html=True
         )
         st.markdown("---")
         render_discover_tab()

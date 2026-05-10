@@ -2,11 +2,11 @@ import { useRef } from 'react'
 import { motion, useInView } from 'framer-motion'
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────────────────────
-// Base:     #1a1b2e
-// Surface:  #222436
-// Border:   #363b54
+// Base:     #1a1f2e
+// Surface:  #222636
+// Border:   #363c54
 // Blue:     #7aa2f7
-// Green:    #9ece6a
+// Mastered: #c9a96e
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─── ICONS ───────────────────────────────────────────────────────────────────
@@ -92,13 +92,13 @@ function HeroCard() {
       animate={{ opacity: 1, x: 0, rotate: 0 }}
       transition={{ duration: 0.9, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
       style={{
-        background: '#222436',
-        border: '1px solid #363b54',
-        borderRadius: 20,
+        background: '#222636',
+        border: '1px solid #363c54',
+        borderRadius: 2,
         padding: '28px',
         width: '360px',
         flexShrink: 0,
-        boxShadow: '0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(122,162,247,0.08)',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.3), 0 0 0 1px rgba(122,162,247,0.08)',
       }}
     >
       {/* Card header */}
@@ -107,7 +107,7 @@ function HeroCard() {
           <div style={{
             background: 'rgba(122,162,247,0.12)',
             border: '1px solid rgba(122,162,247,0.25)',
-            borderRadius: 8,
+            borderRadius: 2,
             padding: '4px 10px',
             fontSize: 11,
             fontFamily: 'inherit',
@@ -117,13 +117,13 @@ function HeroCard() {
             Beginner
           </div>
           <div style={{
-            background: 'rgba(158,206,106,0.12)',
-            border: '1px solid rgba(158,206,106,0.25)',
-            borderRadius: 8,
+            background: 'rgba(201,169,110,0.12)',
+            border: '1px solid rgba(201,169,110,0.25)',
+            borderRadius: 2,
             padding: '4px 10px',
             fontSize: 11,
             fontFamily: 'inherit',
-            color: '#9ece6a',
+            color: '#c9a96e',
             letterSpacing: '0.08em',
           }}>
             5 hrs/week
@@ -153,9 +153,9 @@ function HeroCard() {
               alignItems: 'center',
               gap: 12,
               padding: '10px 12px',
-              borderRadius: 12,
-              background: m.done ? 'rgba(158,206,106,0.06)' : 'rgba(255,255,255,0.03)',
-              border: `1px solid ${m.done ? 'rgba(158,206,106,0.2)' : '#363b54'}`,
+              borderRadius: 2,
+              background: m.done ? 'rgba(201,169,110,0.06)' : 'rgba(255,255,255,0.03)',
+              border: `1px solid ${m.done ? 'rgba(201,169,110,0.2)' : '#363c54'}`,
             }}
           >
             {/* YT thumbnail placeholder */}
@@ -202,13 +202,13 @@ function HeroCard() {
               <div style={{
                 width: 20,
                 height: 20,
-                borderRadius: '50%',
-                background: 'rgba(158,206,106,0.2)',
-                border: '1px solid rgba(158,206,106,0.4)',
+                borderRadius: 2,
+                background: 'rgba(201,169,110,0.2)',
+                border: '1px solid rgba(201,169,110,0.4)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#9ece6a',
+                color: '#c9a96e',
                 flexShrink: 0,
               }}>
                 <IcoCheck />
@@ -227,18 +227,17 @@ function HeroCard() {
         ))}
       </div>
 
-      {/* Progress bar */}
       <div style={{ marginTop: 18 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
           <span style={{ fontFamily: 'inherit', fontSize: 10, color: '#565f89' }}>Progress</span>
-          <span style={{ fontFamily: 'inherit', fontSize: 10, color: '#9ece6a' }}>12%</span>
+          <span style={{ fontFamily: 'inherit', fontSize: 10, color: '#c9a96e' }}>12%</span>
         </div>
-        <div style={{ height: 3, background: '#2a2d42', borderRadius: 99 }}>
+        <div style={{ height: 3, background: '#2a2f42', borderRadius: 2 }}>
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: '12%' }}
-            transition={{ delay: 1.4, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            style={{ height: '100%', background: '#9ece6a', borderRadius: 99 }}
+            transition={{ delay: 1.4, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            style={{ height: '100%', background: '#c9a96e', borderRadius: 2 }}
           />
         </div>
       </div>
@@ -321,9 +320,9 @@ function HowItWorks() {
               animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 32 }}
               transition={{ duration: 0.5, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
               style={{
-                background: '#222436',
-                border: '1px solid #363b54',
-                borderRadius: 16,
+                background: '#222636',
+                border: '1px solid #363c54',
+                borderRadius: 2,
                 padding: '28px 24px',
                 flex: 1,
                 minWidth: 0,
@@ -435,11 +434,11 @@ function FeatureGrid() {
             viewport={{ once: true, margin: '-40px' }}
             transition={{ duration: 0.5, delay: i * 0.06, ease: [0.16, 1, 0.3, 1] }}
             style={{
-              background: '#222436',
-              border: '1px solid #363b54',
-              borderRadius: 16,
+              background: '#222636',
+              border: '1px solid #363c54',
+              borderRadius: 2,
               padding: '32px',
-              transition: 'border-color 0.25s ease',
+              transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
             }}
             whileHover={{ borderColor: 'rgba(122,162,247,0.3)' }}
           >
@@ -524,12 +523,13 @@ function CommunitySection() {
             viewport={{ once: true, margin: '-40px' }}
             transition={{ duration: 0.5, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
             style={{
-              background: '#222436',
-              border: '1px solid #363b54',
+              background: '#222636',
+              border: '1px solid #363c54',
               borderLeft: '3px solid #7aa2f7',
-              borderRadius: 16,
+              borderRadius: 2,
               padding: '28px 24px',
               cursor: 'pointer',
+              transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
             }}
             whileHover={{ borderLeftColor: '#a9c1f7', y: -2 }}
           >
@@ -613,16 +613,16 @@ function FooterCTA({ onGetStarted }) {
           id="footer-cta-btn"
           style={{
             background: '#7aa2f7',
-            color: '#1a1b2e',
+            color: '#1a1f2e',
             fontFamily: 'Inter, sans-serif',
             fontWeight: 700,
             fontSize: 16,
             letterSpacing: '-0.01em',
             border: 'none',
-            borderRadius: 9999,
+            borderRadius: 2,
             padding: '16px 40px',
             cursor: 'pointer',
-            transition: 'all 0.2s ease',
+            transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
             display: 'inline-flex',
             alignItems: 'center',
             gap: 8,
@@ -675,7 +675,7 @@ function LandingNav({ onGetStarted }) {
           height: 28,
           borderRadius: 8,
           background: '#7aa2f7',
-          color: '#1a1b2e',
+          color: '#1a1f2e',
           fontFamily: 'Inter, sans-serif',
           fontWeight: 800,
           fontSize: 16,
@@ -709,15 +709,15 @@ function LandingNav({ onGetStarted }) {
           id="nav-cta-btn"
           style={{
             background: '#7aa2f7',
-            color: '#1a1b2e',
+            color: '#1a1f2e',
             border: 'none',
-            borderRadius: 9999,
+            borderRadius: 2,
             fontFamily: 'Inter, sans-serif',
             fontWeight: 600,
             fontSize: 14,
             padding: '9px 22px',
             cursor: 'pointer',
-            transition: 'all 0.2s ease',
+            transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
           }}
           onMouseEnter={e => { e.target.style.background = '#a9c1f7' }}
           onMouseLeave={e => { e.target.style.background = '#7aa2f7' }}
@@ -843,7 +843,7 @@ function Hero({ onGetStarted }) {
             id="hero-cta-btn"
             style={{
               background: '#7aa2f7',
-              color: '#1a1b2e',
+              color: '#1a1f2e',
               border: 'none',
               borderRadius: 9999,
               fontFamily: 'Inter, sans-serif',
@@ -905,7 +905,7 @@ export default function LandingPage({ onGetStarted }) {
   return (
     <div style={{
       minHeight: '100vh',
-      background: '#1a1b2e',
+      background: '#1a1f2e',
       color: '#c0caf5',
       overflowX: 'hidden',
     }}>
@@ -1033,7 +1033,7 @@ export default function LandingPage({ onGetStarted }) {
                   id="hero-cta-btn"
                   style={{
                     background: '#7aa2f7',
-                    color: '#1a1b2e',
+                    color: '#1a1f2e',
                     border: 'none',
                     borderRadius: 9999,
                     fontFamily: 'Inter, sans-serif',
@@ -1078,7 +1078,7 @@ export default function LandingPage({ onGetStarted }) {
           position: 'absolute',
           bottom: 0, left: 0, right: 0,
           height: 120,
-          background: 'linear-gradient(to bottom, transparent, #1a1b2e)',
+          background: '#1a1f2e',
           pointerEvents: 'none',
         }} />
       </div>

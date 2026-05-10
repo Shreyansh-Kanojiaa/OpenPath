@@ -1,23 +1,26 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
 import LandingPage from './LandingPage'
-
+import { LiveTutor } from './features/LiveTutor'
+import { OfflineNotesButton } from './features/OfflineNotes'
+import { CareerHub } from './features/CareerHub'
+import { Bot, Maximize2, Minimize2 } from 'lucide-react'
 // ─────────────────────────────────────────────────────────────────────────────
 // DESIGN SYSTEM & UTILS
 // ─────────────────────────────────────────────────────────────────────────────
-const API = 'http://localhost:8000'
+const API = `http://${window.location.hostname}:8000`
 
 const FADE_UP = {
-  initial: { opacity: 0, y: 20 },
+  initial: { opacity: 0, y: 10 },
   animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] }
+  transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] }
 }
 
 const BENTO_ITEM = {
-  initial: { opacity: 0, scale: 0.95 },
-  whileInView: { opacity: 1, scale: 1 },
+  initial: { opacity: 0, y: 15 },
+  whileInView: { opacity: 1, y: 0 },
   viewport: { once: true },
-  transition: { duration: 0.4, ease: "easeOut" }
+  transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -38,12 +41,51 @@ const IcoLogout = () => <Icon><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/
 const IcoUser = () => <Icon><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></Icon>
 
 // ─────────────────────────────────────────────────────────────────────────────
+// AMBIENT BACKGROUND
+// ─────────────────────────────────────────────────────────────────────────────
+
+function AmbientBackground() {
+  return (
+    <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+      <motion.div
+        animate={{
+          x: [0, 80, 0],
+          y: [0, 60, 0],
+          scale: [1, 1.2, 1],
+        }}
+        transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
+        className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] rounded-full"
+        style={{ background: 'radial-gradient(circle, rgba(122,162,247,0.06) 0%, transparent 60%)' }}
+      />
+      <motion.div
+        animate={{
+          x: [0, -60, 0],
+          y: [0, 100, 0],
+          scale: [1, 1.1, 1],
+        }}
+        transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
+        className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full"
+        style={{ background: 'radial-gradient(circle, rgba(201,169,110,0.06) 0%, transparent 60%)' }}
+      />
+      <div 
+        className="absolute inset-0 opacity-[0.03]" 
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M40 0H0v40h40V0zM20 0v40M40 20H0' stroke='%23ffffff' fill='none' fill-rule='evenodd'/%3E%3C/svg%3E")`,
+          maskImage: 'linear-gradient(to bottom, transparent, black, transparent)',
+          WebkitMaskImage: 'linear-gradient(to bottom, transparent, black, transparent)'
+        }} 
+      />
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // PRIMITIVES
 // ─────────────────────────────────────────────────────────────────────────────
 function Badge({ children, variant = 'cyan' }) {
   const styles = {
     cyan: 'bg-blue/10 border-blue/20 text-blue',
-    success: 'bg-green/10 border-green/20 text-green',
+    success: 'bg-mastered/10 border-mastered/20 text-mastered',
     danger: 'bg-rose-500/10 border-rose-500/20 text-rose-400',
     muted: 'bg-slate-500/10 border-slate-500/20 text-slate-400',
   }
@@ -56,12 +98,12 @@ function Badge({ children, variant = 'cyan' }) {
 
 function ProgressBar({ value = 0, className = "" }) {
   return (
-    <div className={`w-full h-1.5 bg-white/5 rounded-full overflow-hidden ${className}`}>
+    <div className={`w-full h-1.5 bg-white/5 rounded-[2px] overflow-hidden ${className}`}>
       <motion.div 
         initial={{ width: 0 }}
         whileInView={{ width: `${Math.min(value, 1) * 100}%` }}
-        transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-        className="h-full bg-gradient-to-r from-blue-500 to-blue-300 rounded-full shadow-[0_0_10px_rgba(122,162,247,0.3)]"
+        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        className="h-full bg-cyan rounded-[2px] shadow-blue-glow-sm"
       />
     </div>
   )
@@ -69,7 +111,7 @@ function ProgressBar({ value = 0, className = "" }) {
 
 function Button({ children, onClick, variant = 'primary', className = "", disabled = false, type = 'button' }) {
   const styles = {
-    primary: 'bg-blue text-charcoal-900 font-semibold hover:shadow-blue-glow hover:scale-[1.02]',
+    primary: 'bg-cyan text-base font-semibold hover:shadow-blue-glow hover:scale-[1.02] active:scale-[0.98]',
     outline: 'bg-transparent border border-white/10 text-white hover:bg-white/5',
     ghost: 'bg-transparent text-slate-400 hover:text-white',
     danger: 'bg-transparent border border-rose-500/30 text-rose-400 hover:bg-rose-500/10',
@@ -79,7 +121,7 @@ function Button({ children, onClick, variant = 'primary', className = "", disabl
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`px-6 py-2.5 rounded text-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${styles[variant]} ${className}`}
+      className={`px-6 py-2.5 rounded-[2px] text-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${styles[variant]} ${className}`}
     >
       {children}
     </button>
@@ -96,6 +138,7 @@ function NavPill({ active, setPage, user, onLogout }) {
     { id: 'dashboard', label: 'Dashboard', icon: <IcoGrid /> },
     { id: 'discover', label: 'Discover', icon: <IcoCompass /> },
     { id: 'generate', label: 'Generate', icon: <IcoPlus /> },
+    { id: 'career', label: 'Career', icon: <Icon><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></Icon> },
   ]
 
   return (
@@ -111,7 +154,7 @@ function NavPill({ active, setPage, user, onLogout }) {
               {active === item.id && (
                 <motion.div
                   layoutId="pill-bg"
-                  className="absolute inset-x-[-12px] inset-y-[-4px] bg-white/10 rounded-full z-[-1]"
+                  className="absolute inset-x-[-12px] inset-y-[-4px] bg-white/10 rounded-[2px] z-[-1]"
                   transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
                 />
               )}
@@ -124,7 +167,7 @@ function NavPill({ active, setPage, user, onLogout }) {
         <div className="relative">
           <button 
             onClick={() => setShowUser(!showUser)}
-            className="w-9 h-9 rounded-full bg-blue/10 border border-blue/20 flex items-center justify-center text-blue hover:bg-blue/20 transition-all overflow-hidden font-display text-sm font-bold"
+            className="w-9 h-9 rounded-[2px] bg-blue/10 border border-blue/20 flex items-center justify-center text-blue hover:bg-blue/20 transition-all overflow-hidden font-display text-sm font-bold"
           >
             {user?.username?.[0].toUpperCase() || 'U'}
           </button>
@@ -201,12 +244,12 @@ function AuthScreen({ onLogin }) {
   }
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2 bg-base">
-      <div className="hidden lg:flex flex-col justify-center p-20 relative overflow-hidden bg-surface border-r border-white/5">
-        <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-blue/5 blur-[120px] rounded-full" />
+    <div className="min-h-screen grid lg:grid-cols-2 bg-base relative">
+      <AmbientBackground />
+      <div className="hidden lg:flex flex-col justify-center p-20 relative overflow-hidden bg-surface/50 border-r border-white/5 z-10 backdrop-blur-sm">
         <motion.div {...FADE_UP} className="relative z-10">
           <Badge>OpenPath</Badge>
-          <h1 className="text-8xl font-bold mt-8 mb-10 leading-[0.9] font-display">
+          <h1 className="text-8xl font-bold mt-8 mb-10 leading-tight font-display tracking-tight">
             Learn anything.<br />
             <span className="text-shimmer">Build your path.</span>
           </h1>
@@ -216,7 +259,7 @@ function AuthScreen({ onLogin }) {
         </motion.div>
       </div>
 
-      <div className="flex items-center justify-center p-8">
+      <div className="flex items-center justify-center p-8 relative z-10">
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -290,7 +333,7 @@ function AuthScreen({ onLogin }) {
                 </motion.div>
               </AnimatePresence>
 
-              {info && <p className="text-[11px] text-green font-mono px-4">{info}</p>}
+              {info && <p className="text-[11px] text-mastered font-mono px-4">{info}</p>}
               {err && <p className="text-[11px] text-rose-400 font-mono px-4">{err}</p>}
 
               <Button type="submit" disabled={loading} className="w-full py-5 mt-6 font-display text-base tracking-[0.2em] uppercase">
@@ -343,14 +386,22 @@ function Dashboard({ courses, onSelectCourse, user }) {
               {...BENTO_ITEM}
               transition={{ delay: (i % 8) * 0.1 }}
               onClick={() => onSelectCourse(course)}
+              onMouseMove={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                e.currentTarget.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
+                e.currentTarget.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
+              }}
               className={`glass-card p-10 flex flex-col justify-between cursor-pointer group hover:bg-white/[0.08] hover:border-white/20 hover:scale-[1.02] hover:shadow-blue-glow/20 transition-all duration-500 overflow-hidden relative ${isLarge ? 'md:col-span-2 lg:col-span-3 min-h-[420px]' : 'md:col-span-2 lg:col-span-2 min-h-[420px]'}`}
             >
-              <div className="absolute -top-10 -right-10 w-40 h-40 bg-blue/5 blur-[80px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+              <div 
+                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none z-0" 
+                style={{ background: 'radial-gradient(600px circle at var(--mouse-x, 0) var(--mouse-y, 0), rgba(122,162,247,0.12), transparent 40%)' }}
+              />
               
               <div className="space-y-8 relative z-10">
                 <div className="flex items-center justify-between">
-                  <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${progress === 1 ? 'bg-green/10 text-green' : 'bg-white/5 text-slate-400'}`}>
-                    {progress === 1 ? 'Completed' : course.time_commitment}
+                  <span className={`text-[10px] px-2.5 py-1 rounded-[2px] font-mono tracking-widest uppercase border ${progress === 1 ? 'bg-mastered/10 text-mastered border-mastered/20' : 'bg-white/5 text-slate-400 border-white/10'}`}>
+                    {progress === 1 ? 'Mastered' : course.time_commitment}
                   </span>
                   <span className="text-xs text-slate-500">{Math.round(progress * 100)}%</span>
                 </div>
@@ -364,7 +415,7 @@ function Dashboard({ courses, onSelectCourse, user }) {
                   {course.modules.slice(0, 16).map((m, mi) => (
                     <div 
                       key={mi} 
-                      className={`w-3 h-3 rounded-full border border-charcoal-900 transition-all duration-700 ${m.is_completed || m.is_skipped ? 'bg-cyan shadow-[0_0_12px_rgba(122,162,247,0.6)]' : 'bg-white/10'}`} 
+                      className={`w-2 h-2 rounded-[2px] transition-all duration-300 ${m.is_completed || m.is_skipped ? 'bg-mastered shadow-[0_0_8px_rgba(201,169,110,0.4)]' : 'bg-white/10 border border-white/5'}`} 
                     />
                   ))}
                   {course.modules.length > 16 && <span className="text-[10px] text-slate-600 self-center ml-2 font-black">+{course.modules.length - 16}</span>}
@@ -385,9 +436,9 @@ function Dashboard({ courses, onSelectCourse, user }) {
         <motion.button
           {...BENTO_ITEM}
           transition={{ delay: (courses.length % 8) * 0.1 }}
-          className="md:col-span-2 lg:col-span-1 rounded border-2 border-dashed border-white/5 hover:border-blue/40 hover:bg-blue/5 transition-all flex flex-col items-center justify-center gap-8 group cursor-pointer min-h-[420px]"
+          className="md:col-span-2 lg:col-span-1 rounded-[2px] border-2 border-dashed border-white/5 hover:border-blue/40 hover:bg-blue/5 transition-all flex flex-col items-center justify-center gap-8 group cursor-pointer min-h-[420px]"
         >
-          <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-slate-500 group-hover:text-cyan group-hover:scale-105 group-hover:bg-blue/10 transition-all duration-500">
+          <div className="w-16 h-16 rounded-[2px] bg-white/5 flex items-center justify-center text-slate-500 group-hover:text-cyan group-hover:scale-105 group-hover:bg-blue/10 transition-all duration-500">
             <IcoPlus />
           </div>
           <span className="text-sm text-slate-500 group-hover:text-cyan transition-colors">New course</span>
@@ -464,7 +515,7 @@ function SkipQuizPanel({ mod, token, onSkip }) {
     const passed = score >= 4
     return (
       <div className="md:col-span-2 glass-card p-10 flex flex-col items-center justify-center text-center gap-6">
-        <div className={`text-4xl font-black font-display ${passed ? 'text-green' : 'text-rose-400'}`}>{score}/5</div>
+        <div className={`text-4xl font-black font-display ${passed ? 'text-mastered' : 'text-rose-400'}`}>{score}/5</div>
         <p className="text-sm text-slate-400">{passed ? 'Module skipped!' : 'Score 4/5 or higher to skip this module.'}</p>
         <Button variant="outline" onClick={() => setPhase('idle')}>Try again</Button>
       </div>
@@ -490,8 +541,8 @@ function SkipQuizPanel({ mod, token, onSkip }) {
                 key={i}
                 onClick={() => handleAnswer(i)}
                 disabled={selected !== null}
-                className={`w-full text-left text-xs font-mono px-4 py-3 rounded border transition-all duration-300 ${
-                  isCorrect ? 'bg-green/10 border-green/40 text-green' :
+                className={`w-full text-left text-xs font-mono px-4 py-3 rounded-[2px] border transition-all duration-300 ${
+                  isCorrect ? 'bg-mastered/10 border-mastered/40 text-mastered' :
                   isWrong ? 'bg-rose-500/10 border-rose-500/40 text-rose-400' :
                   isSelected ? 'bg-blue/10 border-blue/40 text-blue' :
                   'bg-transparent border-white/10 text-slate-400 hover:border-white/20 hover:text-slate-200'
@@ -644,8 +695,8 @@ function WatchGatedVideo({ mod, onComplete, token }) {
           {!isCompleted && (
             <div className="absolute bottom-0 left-0 right-0 z-10 pointer-events-none">
               {/* gradient fade from transparent to dark */}
-              <div className="h-32 bg-gradient-to-t from-black/80 to-transparent" />
-              <div className="bg-black/80 px-10 pb-8 -mt-px pointer-events-auto">
+              <div className="h-32 bg-black/80" />
+              <div className="bg-black/80 px-10 pb-8 -mt-px pointer-events-auto border-t border-white/5">
                 <div className="flex items-center gap-6">
                   {/* Progress ring */}
                   <div className="relative w-14 h-14 flex-shrink-0">
@@ -653,9 +704,9 @@ function WatchGatedVideo({ mod, onComplete, token }) {
                       <circle cx="22" cy="22" r="19" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3" />
                       <motion.circle
                         cx="22" cy="22" r="19" fill="none"
-                        stroke={canComplete ? '#9ece6a' : '#7aa2f7'}
+                        stroke={canComplete ? '#c9a96e' : '#7aa2f7'}
                         strokeWidth="3"
-                        strokeLinecap="round"
+                        strokeLinecap="square"
                         strokeDasharray={2 * Math.PI * 19}
                         strokeDashoffset={2 * Math.PI * 19 * (1 - pct)}
                         transition={{ duration: 0.4, ease: 'easeOut' }}
@@ -685,12 +736,12 @@ function WatchGatedVideo({ mod, onComplete, token }) {
                   {/* Activity indicators */}
                   <div className="flex items-center gap-3 flex-shrink-0">
                     <div className="flex items-center gap-1.5" title={ytPlaying ? 'Video playing' : 'Video paused'}>
-                      <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${ytPlaying ? 'bg-green animate-pulse' : 'bg-slate-600'}`} />
+                      <div className={`w-2 h-2 rounded-[2px] transition-colors duration-300 ${ytPlaying ? 'bg-mastered animate-pulse' : 'bg-slate-600'}`} />
                       <span className="text-[9px] font-mono uppercase text-slate-500">{ytPlaying ? 'Playing' : 'Paused'}</span>
                     </div>
                     <div className="w-px h-4 bg-white/10" />
                     <div className="flex items-center gap-1.5" title={userActive ? 'User active' : 'User idle — watching paused'}>
-                      <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${userActive ? 'bg-blue animate-pulse' : 'bg-slate-600'}`} />
+                      <div className={`w-2 h-2 rounded-[2px] transition-colors duration-300 ${userActive ? 'bg-cyan animate-pulse' : 'bg-slate-600'}`} />
                       <span className="text-[9px] font-mono uppercase text-slate-500">{userActive ? 'Active' : 'Idle'}</span>
                     </div>
                   </div>
@@ -699,9 +750,9 @@ function WatchGatedVideo({ mod, onComplete, token }) {
                   <button
                     disabled={!canComplete}
                     onClick={handleComplete}
-                    className={`flex-shrink-0 px-8 py-3 rounded text-sm font-bold font-display uppercase tracking-wider transition-all duration-500 ${
+                    className={`flex-shrink-0 px-8 py-3 rounded-[2px] text-sm font-bold font-display uppercase tracking-wider transition-all duration-300 ${
                       canComplete
-                        ? 'bg-green text-charcoal-900 hover:shadow-[0_0_20px_rgba(158,206,106,0.4)] hover:scale-[1.03] cursor-pointer'
+                        ? 'bg-mastered text-black hover:shadow-blue-glow-sm hover:scale-[1.03] cursor-pointer'
                         : 'bg-white/5 text-slate-600 cursor-not-allowed'
                     }`}
                   >
@@ -714,7 +765,7 @@ function WatchGatedVideo({ mod, onComplete, token }) {
         </>
       ) : (
         <div className="w-full h-full glass-card flex items-center justify-center flex-col gap-6 text-slate-600 bg-surface">
-          <motion.div animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: 'linear' }} className="w-20 h-20 rounded-full border border-dashed border-white/20 flex items-center justify-center opacity-30"><IcoCompass /></motion.div>
+          <motion.div animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: 'linear' }} className="w-20 h-20 rounded-[2px] border border-dashed border-white/20 flex items-center justify-center opacity-30"><IcoCompass /></motion.div>
           <p className="font-mono text-xs uppercase tracking-[0.4em]">Loading video...</p>
         </div>
       )}
@@ -729,10 +780,13 @@ function CourseView({ course, onBack, onComplete, onSaveNotes, token }) {
   const activeMod = mods.find(m => m.id === activeId)
   const completedCount = mods.filter(m => m.is_completed || m.is_skipped).length
   const progress = completedCount / mods.length
+  const [zenMode, setZenMode] = useState(false)
+  const [showTutor, setShowTutor] = useState(false)
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-base pt-24">
-      <aside className="w-96 border-r border-white/5 flex flex-col glass bg-surface/40 backdrop-blur-3xl relative z-20">
+    <div className={`flex w-full overflow-hidden bg-base ${zenMode ? 'fixed inset-0 z-50 pt-0 h-screen' : 'h-screen pt-24'}`}>
+      {!zenMode && (
+        <aside className="w-96 border-r border-white/5 flex flex-col glass bg-surface/40 backdrop-blur-3xl relative z-20">
         <div className="p-10 border-b border-white/5">
           <button onClick={onBack} className="flex items-center gap-2 text-slate-500 hover:text-white transition-all text-sm mb-8 group">
             <span className="group-hover:-translate-x-1 transition-transform duration-300"><IcoBack /></span> Back
@@ -752,32 +806,36 @@ function CourseView({ course, onBack, onComplete, onSaveNotes, token }) {
             const isActive = m.id === activeId
             const isDone = m.is_completed || m.is_skipped
             return (
-              <button
+              <motion.button
                 key={m.id}
                 onClick={() => setActiveId(m.id)}
-                className={`w-full text-left p-5 rounded border transition-all duration-500 group relative overflow-hidden ${
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3, delay: i * 0.05, ease: [0.16, 1, 0.3, 1] }}
+                className={`w-full text-left p-4 rounded-[2px] border transition-all duration-300 group relative overflow-hidden ${
                   isActive 
-                    ? 'bg-blue/10 border-blue/40 text-white shadow-blue-glow/10' 
+                    ? 'bg-cyan/10 border-cyan/40 text-white shadow-blue-glow-sm' 
                     : 'bg-transparent border-transparent text-slate-500 hover:bg-white/5 hover:text-slate-200'
                 }`}
               >
-                <div className="flex justify-between items-center mb-3">
-                    <span className={`text-[10px] px-2 py-0.5 rounded border ${
-                    isDone ? 'border-emerald-500/30 text-green bg-emerald-500/10' : 
-                    isActive ? 'border-blue/40 text-blue bg-blue/10' : 'border-white/10 text-slate-600'
+                <div className="flex justify-between items-center mb-2">
+                    <span className={`text-[10px] px-2 py-0.5 rounded-[2px] border font-mono tracking-widest uppercase ${
+                    isDone ? 'border-mastered/30 text-mastered bg-mastered/10' : 
+                    isActive ? 'border-cyan/40 text-cyan bg-cyan/10' : 'border-white/10 text-slate-600'
                   }`}>
                     Module {String(i + 1).padStart(2, '0')}
                   </span>
-                  {isDone && <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-green"><IcoCheck /></motion.span>}
+                  {isDone && <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-mastered"><IcoCheck /></motion.span>}
                 </div>
-                <div className={`text-sm font-bold font-display leading-snug tracking-tight ${isActive ? 'text-white' : 'group-hover:text-slate-100'}`}>
+                <div className={`text-sm font-bold font-display leading-snug tracking-tight ${isDone ? 'line-through opacity-60' : ''} ${isActive ? 'text-white' : 'group-hover:text-slate-100'}`}>
                   {m.title}
                 </div>
-              </button>
+              </motion.button>
             )
           })}
         </div>
       </aside>
+      )}
 
       <main className="flex-1 overflow-y-auto custom-scrollbar relative">
         <AnimatePresence mode="wait">
@@ -791,14 +849,26 @@ function CourseView({ course, onBack, onComplete, onSaveNotes, token }) {
             {activeMod && (
               <div className="space-y-16">
                 <header>
-                  <div className="flex items-center gap-6 mb-8 text-slate-600">
-                    <Badge variant={activeMod.is_completed ? 'success' : 'cyan'}>
-                      Module {activeMod.order_index}
-                    </Badge>
-                    <div className="h-0.5 w-8 bg-white/10" />
-                    <span className="font-mono text-[10px] uppercase tracking-[0.3em]">
-                      {Math.floor(activeMod.video_duration / 60)}m {activeMod.video_duration % 60}s
-                    </span>
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                    <div className="flex items-center gap-6 text-slate-600">
+                      <Badge variant={activeMod.is_completed ? 'success' : 'cyan'}>
+                        Module {activeMod.order_index}
+                      </Badge>
+                      <div className="h-0.5 w-8 bg-white/10" />
+                      <span className="font-mono text-[10px] uppercase tracking-[0.3em]">
+                        {Math.floor(activeMod.video_duration / 60)}m {activeMod.video_duration % 60}s
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center gap-4">
+                      <button onClick={() => setShowTutor(!showTutor)} className="flex items-center gap-2 px-4 py-2 bg-blue/10 text-blue border border-blue/20 hover:bg-blue/20 rounded transition-colors text-sm font-bold shadow-blue-glow/20 shadow-lg">
+                        <Bot className="w-4 h-4" /> Live Tutor
+                      </button>
+                      <OfflineNotesButton moduleId={activeMod.id} token={token} moduleTitle={activeMod.title} />
+                      <button onClick={() => setZenMode(!zenMode)} className="flex items-center justify-center w-9 h-9 bg-white/5 hover:bg-white/10 rounded border border-white/10 text-slate-400 transition-colors" title="Toggle Zen Mode">
+                        {zenMode ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                      </button>
+                    </div>
                   </div>
                   <h1 className="text-4xl font-bold font-display leading-snug mb-6">{activeMod.title}</h1>
                   <p className="text-lg text-slate-400 leading-relaxed font-sans max-w-3xl">{activeMod.description}</p>
@@ -819,7 +889,7 @@ function CourseView({ course, onBack, onComplete, onSaveNotes, token }) {
                     />
                     <div className="flex justify-between items-center px-2">
                        <div className="flex gap-1">
-                         {[1,2,3].map(i => <div key={i} className="w-1 h-1 rounded-full bg-cyan/40 animate-pulse" style={{ animationDelay: `${i*200}ms` }} />)}
+                         {[1,2,3].map(i => <div key={i} className="w-1 h-1 rounded-[2px] bg-cyan/40 animate-pulse" style={{ animationDelay: `${i*200}ms` }} />)}
                        </div>
                       <span className="text-[10px] font-mono text-slate-600 uppercase tracking-[0.3em]">Auto-saved</span>
                     </div>
@@ -830,6 +900,9 @@ function CourseView({ course, onBack, onComplete, onSaveNotes, token }) {
               </div>
             )}
           </motion.div>
+        </AnimatePresence>
+        <AnimatePresence>
+          {showTutor && <LiveTutor moduleId={activeMod.id} token={token} onClose={() => setShowTutor(false)} />}
         </AnimatePresence>
       </main>
     </div>
@@ -923,9 +996,9 @@ const TIME_OPTIONS = [
   '1-2 hrs/week', '3-4 hrs/week', '5-7 hrs/week', '8-10 hrs/week', '10+ hrs/week',
 ]
 
-function GeneratePage({ token, onGenerate }) {
-  const [skill, setSkill] = useState('')
-  const [level, setLevel] = useState(1)
+function GeneratePage({ token, onGenerate, initialSkill = '' }) {
+  const [skill, setSkill] = useState(initialSkill)
+  const [level, setLevel] = useState(3)
   const [time, setTime] = useState('3-4 hrs/week')
   const [depth, setDepth] = useState('Standard (5 modules)')
   const [loading, setLoading] = useState(false)
@@ -982,7 +1055,7 @@ function GeneratePage({ token, onGenerate }) {
             </div>
             <input
               type="range" min="1" max="10"
-              className="w-full h-1.5 bg-border rounded-full appearance-none cursor-pointer accent-blue"
+              className="w-full h-1.5 bg-border rounded-[2px] appearance-none cursor-pointer accent-blue"
               value={level}
               onChange={(e) => setLevel(Number(e.target.value))}
             />
@@ -1038,9 +1111,9 @@ function GeneratePage({ token, onGenerate }) {
           <button
             disabled={!skill.trim() || loading}
             onClick={handleGenerate}
-            className="w-full py-4 text-base font-bold bg-blue text-base-color rounded hover:bg-blue-bright transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full py-4 text-base font-bold bg-cyan text-base rounded-[2px] hover:shadow-blue-glow hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {loading ? 'Building your path... (this takes ~30 seconds)' : 'Generate my path'}
+            {loading ? 'Building your path...' : 'Generate my path'}
           </button>
         </div>
       </motion.div>
@@ -1071,6 +1144,7 @@ export default function App() {
   const [courses, setCourses] = useState([])
   const [selected, setSelected] = useState(null)
   const [showLanding, setShowLanding] = useState(true)
+  const [prefilledSkill, setPrefilledSkill] = useState('')
 
   useEffect(() => {
     const token = localStorage.getItem('op_token')
@@ -1147,13 +1221,14 @@ export default function App() {
   if (!user) return <AuthScreen onLogin={login} />
 
   return (
-    <div className="min-h-screen bg-base flex flex-col font-sans text-slate-200">
+    <div className="min-h-screen bg-base flex flex-col font-sans text-slate-200 relative">
+      <AmbientBackground />
       <NavPill active={page} setPage={setPage} user={user} onLogout={logout} />
       
-      <main className="flex-1 overflow-x-hidden flex flex-col relative">
-        <div className="fixed inset-0 bg-surface opacity-20 pointer-events-none">
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan/20 to-transparent" />
-          <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan/10 to-transparent" />
+      <main className="flex-1 overflow-x-hidden flex flex-col relative z-10">
+        <div className="fixed inset-0 pointer-events-none">
+          <div className="absolute inset-x-0 top-0 h-px bg-cyan/20" />
+          <div className="absolute inset-y-0 left-0 w-px bg-cyan/10" />
         </div>
         
         <AnimatePresence mode="wait">
@@ -1176,10 +1251,12 @@ export default function App() {
               />
             )}
             {page === 'discover' && <DiscoverPage token={user.token} onEnroll={async () => { await refreshCourses(); setPage('dashboard') }} />}
-            {page === 'generate' && <GeneratePage token={user.token} onGenerate={() => { refreshCourses(); setPage('dashboard') }} />}
+            {page === 'generate' && <GeneratePage key={prefilledSkill} token={user.token} initialSkill={prefilledSkill} onGenerate={() => { refreshCourses(); setPage('dashboard'); setPrefilledSkill(''); }} />}
+            {page === 'career' && <CareerHub token={user.token} onGenerateClick={(skill) => { setPrefilledSkill(skill); setPage('generate'); }} />}
           </motion.div>
         </AnimatePresence>
       </main>
     </div>
   )
 }
+

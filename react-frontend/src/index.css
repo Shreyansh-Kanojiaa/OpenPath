@@ -6,12 +6,12 @@
 ───────────────────────────────────────────────────────────────────────────── */
 @theme {
   /* Core backgrounds */
-  --color-base:        #1a1b2e;
-  --color-surface:     #222436;
-  --color-overlay:     #292d42;
-  --color-subtle:      #2a2d42;
-  --color-border:      #363b54;
-  --color-border-muted: #2a2d42;
+  --color-base:        #1a1f2e;
+  --color-surface:     #222636;
+  --color-overlay:     #292e42;
+  --color-subtle:      #2a2f42;
+  --color-border:      #363c54;
+  --color-border-muted: #2a2f42;
 
   /* Charcoal aliases kept for App.jsx compatibility */
   --color-charcoal-950: #1a1b2e;
@@ -26,12 +26,14 @@
   --color-cyan: #7aa2f7;
   --color-blue: #7aa2f7;
   --color-blue-bright: #a9c1f7;
-  --color-green: #9ece6a;
-  --color-green-bright: #b5e8a0;
+  --color-green: #c9a96e;
+  --color-mastered: #c9a96e;
+  --color-green-bright: #e6c587;
 
   /* Shadow utilities */
-  --shadow-blue-glow: 0 0 20px rgba(122, 162, 247, 0.20);
-  --shadow-blue-glow-sm: 0 0 12px rgba(122, 162, 247, 0.12);
+  --shadow-blue-glow: 0 0 20px rgba(122, 162, 247, 0.12);
+  --shadow-blue-glow-sm: 0 0 12px rgba(122, 162, 247, 0.08);
+  --shadow-l1: 0 2px 8px rgba(0,0,0,0.3);
 
   /* Text */
   --color-text-primary: #c0caf5;
@@ -41,14 +43,14 @@
   /* Typography — Inter everywhere */
   --font-sans: "Inter", "system-ui", "-apple-system", "Segoe UI", "sans-serif";
   --font-display: "Inter", "system-ui", "-apple-system", "Segoe UI", "sans-serif";
-  --font-mono: "SFMono-Regular", "Menlo", "Consolas", "monospace";
+  --font-mono: "JetBrains Mono", "SFMono-Regular", "Menlo", "Consolas", "monospace";
 
-  --radius-bento: 10px;
+  --radius-bento: 2px;
 }
 
 @layer base {
   body {
-    background-color: #1a1b2e;
+    background-color: #1a1f2e;
     color: #c0caf5;
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
@@ -77,13 +79,11 @@
 }
 
 @utility glass-card {
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  background-color: #222436;
-  border: 1px solid #363b54;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  background-color: #222636;
+  border: 1px solid #363c54;
+  box-shadow: var(--shadow-l1);
   border-radius: var(--radius-bento);
-  transition: all 0.3s;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @utility glass-card-hover {
@@ -96,11 +96,9 @@
 }
 
 @utility nav-pill {
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  background-color: rgba(26, 27, 46, 0.88);
-  border: 1px solid #363b54;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  background-color: #1a1f2e;
+  border: 1px solid #363c54;
+  box-shadow: var(--shadow-l1);
   position: fixed;
   top: 1.5rem;
   left: 50%;
@@ -108,7 +106,7 @@
   display: flex;
   align-items: center;
   padding: 4px;
-  border-radius: 6px;
+  border-radius: 2px;
   z-index: 50;
 }
 
@@ -154,8 +152,8 @@
 
 /* Global scrollbar */
 ::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background-color: #1a1b2e; }
-::-webkit-scrollbar-thumb { background-color: #363b54; border-radius: 9999px; }
+::-webkit-scrollbar-track { background-color: #1a1f2e; }
+::-webkit-scrollbar-thumb { background-color: #363c54; border-radius: 2px; }
 ::-webkit-scrollbar-thumb:hover { background-color: #414868; }
 
 @keyframes shimmer {

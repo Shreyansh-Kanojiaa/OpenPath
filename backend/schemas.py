@@ -118,3 +118,39 @@ class NoteUpdate(BaseModel):
 # ── Module completion ─────────────────────────────────────────────────────────
 class ModuleCompleteRequest(BaseModel):
     watch_time: int = Field(ge=0, description="Seconds of video the user actively watched")
+
+# ── Live Tutor Chat ─────────────────────────────────────────────────────────
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+class ChatRequest(BaseModel):
+    messages: List[ChatMessage]
+
+# ── Job Ready Calculator ──────────────────────────────────────────────────
+class JobReadyRequest(BaseModel):
+    job_title: str
+    company: str
+
+class JobReadyResponse(BaseModel):
+    readiness_percentage: int
+    missing_skills: List[str]
+    suggested_modules: List[str]
+    roadmap: List[str]
+    estimated_time: str
+
+# ── Skill Graph ───────────────────────────────────────────────────────────
+class SkillNode(BaseModel):
+    id: str
+    name: str
+    val: int
+    completed: bool
+
+class SkillLink(BaseModel):
+    source: str
+    target: str
+
+class SkillGraphResponse(BaseModel):
+    nodes: List[SkillNode]
+    links: List[SkillLink]
+

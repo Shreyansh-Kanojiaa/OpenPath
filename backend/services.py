@@ -170,24 +170,11 @@ def parse_time_ago(time_text):
 
 
 def rank_video(video: dict, query: str, depth: str = "",
-               module_title: str = "", module_description: str = "") -> float:
+               module_title: str = "", module_description: str = "",
+               skill_name: str = "") -> float:
     """
     Score a video for relevance.  Returns -100 for hard-rejected videos.
-
-    Hard rejections (instant -100):
-      - Duration < 5 min or > max (45/120 min)
-      - Non-English title (> 30% non-Latin characters)
-      - Clickbait / reaction content
-      - Keyword overlap below minimum threshold
-
-    Scoring weights (sum to 1.0):
-      Relevance  0.50  — keyword overlap between query+module context and title
-      Channel    0.15  — trusted channel boost / institutional penalty
-      Views      0.15  — popularity signal
-      Structure  0.10  — timestamps / description quality
-      Recency    0.10  — newer content preferred slightly
     """
-
     # ── Duration gate ──
     duration_str = str(video.get("duration", "0:00"))
     parts = duration_str.split(":")
@@ -202,7 +189,7 @@ def rank_video(video: dict, query: str, depth: str = "",
 
     if minutes < 5:
         return -100.0
-    max_duration = 120 if "In-Depth" in depth or "Comprehensive" in depth else 45
+    max_duration = 120 if "In-Depth" in depth or "Comprehensive" in depth else 60
     if minutes > max_duration:
         return -100.0
 
@@ -218,36 +205,52 @@ def rank_video(video: dict, query: str, depth: str = "",
     if _NEGATIVE_TITLE_PATTERNS.search(title_lower):
         return -100.0
 
-    # ── Relevance (weight: 0.50) — primary signal ──
+    # ── Relevance (weight: 0.50) — strict gating ──
     query_keywords = _extract_topic_keywords(query)
     title_keywords = _extract_topic_keywords(module_title) if module_title else set()
     desc_keywords = _extract_topic_keywords(module_description) if module_description else set()
+    skill_keywords = _extract_topic_keywords(skill_name) if skill_name else set()
 
     # All context keywords from our side
-    all_context_keywords = query_keywords | title_keywords | desc_keywords
+    all_context_keywords = query_keywords | title_keywords | desc_keywords | skill_keywords
     # Keywords extracted from the video title
     video_title_keywords = _extract_topic_keywords(title)
 
     if all_context_keywords:
-        # Forward: how many of our context keywords appear in the video title
-        forward_matches = sum(1 for w in all_context_keywords if w in title_lower)
-        # Reverse: how many of the video's title keywords appear in our context
-        reverse_matches = sum(1 for w in video_title_keywords if w in ' '.join(all_context_keywords))
-
-        forward_ratio = forward_matches / len(all_context_keywords)
-        reverse_ratio = reverse_matches / len(video_title_keywords) if video_title_keywords else 0
-
-        # Combined relevance: forward matching is primary, reverse is supplementary
-        relevance = (forward_ratio * 0.60) + (reverse_ratio * 0.40)
-
-        # Hard reject: if NO context keywords appear in the video title at all,
-        # the video is almost certainly irrelevant
-        if forward_matches == 0:
+        # Proper set intersection matching
+        forward_matches = all_context_keywords.intersection(video_title_keywords)
+        
+        # Multi-word phrase matching
+        phrase_bonus = 0.0
+        if skill_name and skill_name.lower() in title_lower:
+            phrase_bonus += 0.2
+        if module_title and _clean_module_title(module_title).lower() in title_lower:
+            phrase_bonus += 0.3
+            
+        forward_ratio = len(forward_matches) / len(all_context_keywords) if all_context_keywords else 0
+        if forward_ratio < 0.15 and phrase_bonus < 0.3:
             return -100.0
+            
+        # Semantic skill anchoring penalty if missing
+        if skill_keywords and not skill_keywords.intersection(video_title_keywords):
+            phrase_bonus -= 0.15
+
+        reverse_ratio = len(forward_matches) / len(video_title_keywords) if video_title_keywords else 0
+
+        # Combined relevance
+        relevance = min(1.0, (forward_ratio * 0.60) + (reverse_ratio * 0.40) + phrase_bonus)
     else:
         relevance = 1.0
 
     score = relevance * 0.50
+
+    if relevance < 0.25:
+        return -100.0
+
+    # ── Educational intent detection ──
+    educational_keywords = {"course", "tutorial", "guide", "lecture", "explained", "masterclass", "crash course", "fundamentals", "basics", "advanced", "learn"}
+    if any(kw in title_lower for kw in educational_keywords):
+        score += 0.10
 
     # ── Channel quality (weight: 0.15) ──
     channel_name = str(video.get("channel", "")).strip().lower()
@@ -267,18 +270,18 @@ def rank_video(video: dict, query: str, depth: str = "",
     else: views_score = 0.1
     score += views_score * 0.15
 
-    # ── Structure (weight: 0.10) ──
+    # ── Structure (weight: 0.05) ──
     desc = str(video.get("long_desc", ""))
     has_timestamps = bool(re.search(r'\d{1,2}:\d{2}', desc))
     structure_score = 1.0 if has_timestamps else (0.5 if len(desc) > 50 else 0)
-    score += structure_score * 0.10
+    score += structure_score * 0.05
 
-    # ── Recency (weight: 0.10) ──
+    # ── Recency (weight: 0.05) ──
     days_ago = parse_time_ago(video.get("publish_time", ""))
     if days_ago < 30: recency_score = 1.0
     elif days_ago < 365: recency_score = 0.7
     else: recency_score = max(0, 1.0 - (days_ago / 3650))
-    score += recency_score * 0.10
+    score += recency_score * 0.05
 
     return score
 
@@ -301,29 +304,90 @@ def get_video_seconds(video: dict) -> int:
         return 600
 
 
+def _ai_rerank_videos(candidates: list[dict], module_title: str, module_description: str, skill_name: str) -> dict:
+    """Use Gemini to pick the best educational video from a shortlist of highly relevant candidates."""
+    if not candidates:
+        return None
+    if len(candidates) == 1:
+        return candidates[0]
+        
+    client = genai.Client()
+    
+    candidates_json = []
+    for i, v in enumerate(candidates):
+        candidates_json.append({
+            "index": i,
+            "title": v.get("title", ""),
+            "channel": v.get("channel", ""),
+            "duration": v.get("duration", ""),
+            "views": v.get("views", "0")
+        })
+        
+    prompt = f"""
+    You are an expert curriculum designer. We need the best educational YouTube video for a student learning "{skill_name}".
+    
+    Module Title: {module_title}
+    Module Description: {module_description}
+    
+    Here is a shortlist of candidate videos (already filtered for basic relevance):
+    {candidates_json}
+    
+    Select the single most educationally relevant video.
+    Prefer exact subtopic matches, structured tutorials, educational channels, and strong curriculum alignment.
+    Respond ONLY with a JSON object containing the chosen 'index' (integer).
+    Example: {{"index": 2}}
+    """
+    
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                temperature=0.1,
+            )
+        )
+        import json
+        choice = json.loads(response.text)
+        idx = choice.get("index", 0)
+        if 0 <= idx < len(candidates):
+            return candidates[idx]
+    except Exception as e:
+        print(f"[AI Rerank] Failed: {e}")
+        
+    # Fallback to the first candidate
+    return candidates[0]
+
 def find_best_video(query: str, exclude_ids: set = None, depth: str = "",
                     module_title: str = "", module_description: str = "",
                     skill_name: str = "") -> dict:
-    """Search YouTube and return the best-matching video for the given query.
-
-    Uses module title and description for context-aware ranking.
-    Tries multiple search strategies before giving up.
-    """
+    """Search YouTube and return the best-matching video using diversified search and AI reranking."""
     exclude_ids = exclude_ids or set()
     max_res = 20 if "Comprehensive" in depth or "In-Depth" in depth else 15
 
     clean_title = _clean_module_title(module_title) if module_title else ""
 
-    # Build multiple search strategies for robustness
+    # Diversified search strategies
     search_strategies = [
-        f"{query} tutorial",
+        query, # 1. Exact module query search
     ]
     if clean_title and skill_name:
-        search_strategies.append(f"{skill_name} {clean_title} tutorial")
+        search_strategies.append(f"{skill_name} {clean_title} tutorial") # 2. Skill + subtopic search
     if clean_title:
-        search_strategies.append(f"{clean_title} tutorial explained")
+        search_strategies.append(f"{clean_title} explained {skill_name}") # 3. Explainer-style search
+    
+    # 4. Description-derived search
+    if module_description:
+        desc_keywords = list(_extract_topic_keywords(module_description))[:3]
+        if desc_keywords:
+            search_strategies.append(f"{skill_name} {clean_title} {' '.join(desc_keywords)}")
+            
+    # 5. Broad fallback search
+    search_strategies.append(f"{skill_name} tutorial")
 
     from youtube_search import YoutubeSearch
+
+    all_candidates = []
 
     for strategy_idx, search_query in enumerate(search_strategies):
         try:
@@ -336,24 +400,52 @@ def find_best_video(query: str, exclude_ids: set = None, depth: str = "",
                 continue
 
             scored = [
-                (v, rank_video(v, query, depth, module_title, module_description))
+                (v, rank_video(v, query, depth, module_title, module_description, skill_name))
                 for v in results
             ]
-            valid = [(v, s) for v, s in scored if s > -50]
-
-            if valid:
-                best_video, best_score = max(valid, key=lambda x: x[1])
-                duration = get_video_seconds(best_video)
-                channel = best_video.get("channel", "?")
-                print(f"  [video] strategy={strategy_idx} '{search_query}' → [{channel}] "
-                      f"{best_video.get('title', '?')[:60]} (score={best_score:.3f})")
-                return {"id": best_video.get("id"), "duration": duration}
+            valid = [(v, s) for v, s in scored if s > -20]
+            
+            for v, s in valid:
+                all_candidates.append({"video": v, "score": s})
+                
+            # Early exit if we found exceptionally good matches
+            if any(s > 0.8 for _, s in valid):
+                break
 
         except Exception as e:
             print(f"YouTube search failed for strategy {strategy_idx} query '{search_query}': {e}.")
             continue
 
-    print(f"  [video] ALL strategies exhausted for module '{module_title}' — no video found.")
+    if not all_candidates:
+        print(f"  [video] ALL strategies exhausted for module '{module_title}' — no video found.")
+        return None
+
+    # Deduplicate candidates
+    unique_candidates = {}
+    for item in all_candidates:
+        vid_id = item["video"].get("id")
+        if vid_id not in unique_candidates or unique_candidates[vid_id]["score"] < item["score"]:
+            unique_candidates[vid_id] = item
+            
+    # Sort by score descending
+    sorted_candidates = sorted(unique_candidates.values(), key=lambda x: x["score"], reverse=True)
+    
+    # Take top 5 candidates for AI reranking
+    top_candidates = [item["video"] for item in sorted_candidates[:5]]
+    top_score = sorted_candidates[0]["score"]
+    runner_up_score = sorted_candidates[1]["score"] if len(sorted_candidates) > 1 else 0.0
+
+    if len(top_candidates) > 1 and (top_score - runner_up_score) < 0.10:
+        best_video = _ai_rerank_videos(top_candidates, module_title, module_description, skill_name)
+    else:
+        best_video = sorted_candidates[0]["video"]
+    
+    if best_video:
+        duration = get_video_seconds(best_video)
+        channel = best_video.get("channel", "?")
+        print(f"  [video] AI selected -> [{channel}] {best_video.get('title', '?')[:60]}")
+        return {"id": best_video.get("id"), "duration": duration}
+
     return None
 
 
@@ -477,3 +569,183 @@ def generate_flashcards(module_id: int, video_id: str | None, fallback_topic: st
                 schemas.Flashcard(front="What approach is recommended for mastering this module?", back="Practice consistently, review examples, and apply the concepts in small projects."),
             ],
         )
+
+# ─────────────────────────────────────────────────────────────────────────────
+# LIVE TUTOR CHAT
+# ─────────────────────────────────────────────────────────────────────────────
+
+def chat_with_module(video_id: str, module_topic: str, messages: list[schemas.ChatMessage]) -> str:
+    """Chat with the context of a specific module."""
+    if not os.environ.get("GEMINI_API_KEY"):
+        raise ValueError("GEMINI_API_KEY environment variable is not set.")
+
+    context = ""
+    if video_id:
+        try:
+            transcript = YouTubeTranscriptApi.get_transcript(video_id)
+            context = " ".join([entry["text"] for entry in transcript])[:15000]
+        except Exception:
+            context = ""
+    
+    client = genai.Client()
+    
+    # Build prompt
+    history = "\n".join([f"{msg.role}: {msg.content}" for msg in messages[:-1]])
+    user_query = messages[-1].content if messages else ""
+    
+    prompt = f"""
+    You are an expert AI tutor helping a student learn about: "{module_topic}".
+    Here is the transcript of the video they are watching:
+    {context}
+    
+    Conversation History:
+    {history}
+    
+    User: {user_query}
+    
+    Provide a helpful, educational, and engaging response based primarily on the transcript if relevant.
+    Use clear markdown formatting, with code blocks if needed. Keep it concise but comprehensive.
+    """
+    
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+        )
+        return response.text
+    except Exception as e:
+        print(f"[Chat] Gemini failed: {e}")
+        return "I'm having trouble connecting right now. Please try again later."
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# OFFLINE STUDY GUIDE
+# ─────────────────────────────────────────────────────────────────────────────
+
+def generate_offline_notes(video_id: str, module_topic: str) -> str:
+    """Generate comprehensive offline markdown notes from a transcript."""
+    if not os.environ.get("GEMINI_API_KEY"):
+        return "# Error\nGEMINI API key not set."
+
+    context = ""
+    if video_id:
+        try:
+            transcript = YouTubeTranscriptApi.get_transcript(video_id)
+            context = " ".join([entry["text"] for entry in transcript])[:15000]
+        except Exception:
+            context = ""
+            
+    client = genai.Client()
+    
+    prompt = f"""
+    Create a highly structured, comprehensive offline study guide for: "{module_topic}".
+    Here is the video transcript to base it on:
+    {context}
+    
+    Distill this into concise Markdown notes. Include:
+    - Key definitions
+    - Core concepts
+    - Code snippets or formulas if applicable
+    - Summary
+    - Revision bullets
+    
+    Make it visually appealing in Markdown format.
+    """
+    
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+        )
+        return response.text
+    except Exception as e:
+        print(f"[Offline Notes] Gemini failed: {e}")
+        return "# Error\nFailed to generate notes."
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JOB READY CALCULATOR
+# ─────────────────────────────────────────────────────────────────────────────
+
+def calculate_job_readiness(job_title: str, company: str, user_completed_skills: list[str]) -> schemas.JobReadyResponse:
+    """Calculate job readiness percentage and missing skills using Gemini."""
+    if not os.environ.get("GEMINI_API_KEY"):
+        raise ValueError("GEMINI_API_KEY environment variable is not set.")
+        
+    client = genai.Client()
+    
+    prompt = f"""
+    You are an expert career counselor and tech recruiter. 
+    Analyze the job role: "{job_title}" at "{company}".
+    
+    The user has completed courses covering these skills: {', '.join(user_completed_skills) if user_completed_skills else 'None yet'}.
+    
+    Determine how ready they are for this role.
+    Generate a JSON response matching the required schema:
+    - readiness_percentage (int 0-100)
+    - missing_skills (list of strings)
+    - suggested_modules (list of strings)
+    - roadmap (list of strings): Provide a clear, step-by-step list of specific skills or course titles the user needs to learn next. Make these highly specific and actionable (e.g., 'Learn Python Data Structures' instead of 'Get better at programming'). These roadmap items will be used directly to generate new courses.
+    - estimated_time (string, e.g. "3 months")
+    """
+    
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=schemas.JobReadyResponse,
+                temperature=0.3,
+            )
+        )
+        return schemas.JobReadyResponse.model_validate_json(response.text)
+    except Exception as e:
+        print(f"[Job Ready] Gemini failed: {e}")
+        return schemas.JobReadyResponse(
+            readiness_percentage=10,
+            missing_skills=["Everything"],
+            suggested_modules=["Intro to Everything"],
+            roadmap=["Start learning"],
+            estimated_time="1 year"
+        )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SKILL GRAPH
+# ─────────────────────────────────────────────────────────────────────────────
+
+def generate_skill_graph(user_completed_skills: list[str]) -> schemas.SkillGraphResponse:
+    """Generate a skill graph mapping dependencies and nodes for visualization."""
+    if not os.environ.get("GEMINI_API_KEY"):
+        raise ValueError("GEMINI_API_KEY environment variable is not set.")
+        
+    client = genai.Client()
+    
+    prompt = f"""
+    You are an expert curriculum designer. The user has completed courses on the following skills:
+    {', '.join(user_completed_skills) if user_completed_skills else 'None'}
+    
+    Create an interconnected skill graph around these skills, expanding to related prerequisite and advanced skills.
+    Return a list of nodes and links.
+    - Each node should have: id (string), name (string), val (int, size/glow), completed (bool).
+    - Each link should have: source (node id), target (node id).
+    
+    Generate JSON matching the schema for SkillGraphResponse.
+    Make sure to include around 10-15 related skills.
+    """
+    
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=schemas.SkillGraphResponse,
+                temperature=0.3,
+            )
+        )
+        return schemas.SkillGraphResponse.model_validate_json(response.text)
+    except Exception as e:
+        print(f"[Skill Graph] Gemini failed: {e}")
+        return schemas.SkillGraphResponse(nodes=[], links=[])
