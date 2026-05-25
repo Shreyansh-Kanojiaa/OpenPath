@@ -2,11 +2,7 @@ import { useRef } from 'react'
 import { motion, useInView } from 'framer-motion'
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────────────────────
-// Base:     #1a1f2e
-// Surface:  #222636
-// Border:   #363c54
-// Blue:     #7aa2f7
-// Mastered: #c9a96e
+// Base: #13141c  Surface: #1e2030  Border: #2e3350  Accent: #7aa2f7
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─── ICONS ───────────────────────────────────────────────────────────────────
@@ -50,7 +46,7 @@ const IcoCheck = () => (
 )
 const IcoYT = () => (
   <Ico className="w-5 h-5" viewBox="0 0 24 24">
-    <rect x="2" y="5" width="20" height="14" rx="3" fill="rgba(122,162,247,0.15)" stroke="#7aa2f7" strokeWidth="1.5" />
+    <rect x="2" y="5" width="20" height="14" rx="3" fill="rgba(122, 162, 247,0.15)" stroke="#7aa2f7" strokeWidth="1.5" />
     <polygon points="10,9 16,12 10,15" fill="#7aa2f7" stroke="none" />
   </Ico>
 )
@@ -92,22 +88,21 @@ function HeroCard() {
       animate={{ opacity: 1, x: 0, rotate: 0 }}
       transition={{ duration: 0.9, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
       style={{
-        background: '#222636',
-        border: '1px solid #363c54',
-        borderRadius: 2,
+        background: '#1e2030',
+        border: '1px solid #2e3350',
+        borderRadius: 8,
         padding: '28px',
         width: '360px',
         flexShrink: 0,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.3), 0 0 0 1px rgba(122,162,247,0.08)',
       }}
     >
       {/* Card header */}
       <div style={{ marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
           <div style={{
-            background: 'rgba(122,162,247,0.12)',
-            border: '1px solid rgba(122,162,247,0.25)',
-            borderRadius: 2,
+            background: 'rgba(122, 162, 247,0.12)',
+            border: '1px solid rgba(122, 162, 247,0.25)',
+            borderRadius: 8,
             padding: '4px 10px',
             fontSize: 11,
             fontFamily: 'inherit',
@@ -117,28 +112,28 @@ function HeroCard() {
             Beginner
           </div>
           <div style={{
-            background: 'rgba(201,169,110,0.12)',
-            border: '1px solid rgba(201,169,110,0.25)',
-            borderRadius: 2,
+            background: 'rgba(122, 162, 247,0.12)',
+            border: '1px solid rgba(122, 162, 247,0.25)',
+            borderRadius: 8,
             padding: '4px 10px',
             fontSize: 11,
             fontFamily: 'inherit',
-            color: '#c9a96e',
+            color: '#7aa2f7',
             letterSpacing: '0.08em',
           }}>
             5 hrs/week
           </div>
         </div>
-        <div style={{ fontFamily: 'Inter, sans-serif', fontWeight: 700, fontSize: 22, color: '#c0caf5', letterSpacing: '-0.02em' }}>
+        <div style={{ fontFamily: 'Inter, sans-serif', fontWeight: 700, fontSize: 22, color: '#e0e4f0', letterSpacing: '-0.02em' }}>
           Rust Programming
         </div>
-        <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#7982a9', marginTop: 4 }}>
+        <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#8891ad', marginTop: 4 }}>
           8 modules · Custom syllabus
         </div>
       </div>
 
       {/* Divider */}
-      <div style={{ height: 1, background: '#363b54', marginBottom: 16 }} />
+      <div style={{ height: 1, background: '#2e3350', marginBottom: 16 }} />
 
       {/* Module rows */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -153,18 +148,18 @@ function HeroCard() {
               alignItems: 'center',
               gap: 12,
               padding: '10px 12px',
-              borderRadius: 2,
-              background: m.done ? 'rgba(201,169,110,0.06)' : 'rgba(255,255,255,0.03)',
-              border: `1px solid ${m.done ? 'rgba(201,169,110,0.2)' : '#363c54'}`,
+              borderRadius: 8,
+              background: m.done ? 'rgba(122, 162, 247,0.06)' : 'rgba(255,255,255,0.03)',
+              border: `1px solid ${m.done ? 'rgba(122, 162, 247,0.2)' : '#2e3350'}`,
             }}
           >
             {/* YT thumbnail placeholder */}
             <div style={{
               width: 44,
               height: 30,
-              borderRadius: 6,
-              background: 'rgba(122,162,247,0.08)',
-              border: '1px solid rgba(122,162,247,0.15)',
+              borderRadius: 8,
+              background: 'rgba(122, 162, 247,0.08)',
+              border: '1px solid rgba(122, 162, 247,0.15)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -179,7 +174,7 @@ function HeroCard() {
                 fontFamily: 'Inter, sans-serif',
                 fontSize: 12,
                 fontWeight: 500,
-                color: m.done ? '#7982a9' : '#c0caf5',
+                color: m.done ? '#8891ad' : '#e0e4f0',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
@@ -190,7 +185,7 @@ function HeroCard() {
               <div style={{
                 fontFamily: 'inherit',
                 fontSize: 10,
-                color: '#565f89',
+                color: '#6b6860',
                 marginTop: 2,
               }}>
                 {m.dur}
@@ -202,13 +197,13 @@ function HeroCard() {
               <div style={{
                 width: 20,
                 height: 20,
-                borderRadius: 2,
-                background: 'rgba(201,169,110,0.2)',
-                border: '1px solid rgba(201,169,110,0.4)',
+                borderRadius: 8,
+                background: 'rgba(122, 162, 247,0.2)',
+                border: '1px solid rgba(122, 162, 247,0.4)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#c9a96e',
+                color: '#7aa2f7',
                 flexShrink: 0,
               }}>
                 <IcoCheck />
@@ -217,7 +212,7 @@ function HeroCard() {
               <div style={{
                 fontFamily: 'inherit',
                 fontSize: 10,
-                color: '#565f89',
+                color: '#6b6860',
                 flexShrink: 0,
               }}>
                 {i === 1 ? '▶' : '○'}
@@ -229,15 +224,15 @@ function HeroCard() {
 
       <div style={{ marginTop: 18 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-          <span style={{ fontFamily: 'inherit', fontSize: 10, color: '#565f89' }}>Progress</span>
-          <span style={{ fontFamily: 'inherit', fontSize: 10, color: '#c9a96e' }}>12%</span>
+          <span style={{ fontFamily: 'inherit', fontSize: 10, color: '#6b6860' }}>Progress</span>
+          <span style={{ fontFamily: 'inherit', fontSize: 10, color: '#7aa2f7' }}>12%</span>
         </div>
-        <div style={{ height: 3, background: '#2a2f42', borderRadius: 2 }}>
+        <div style={{ height: 3, background: '#2a2f42', borderRadius: 8 }}>
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: '12%' }}
             transition={{ delay: 1.4, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            style={{ height: '100%', background: '#c9a96e', borderRadius: 2 }}
+            style={{ height: '100%', background: '#7aa2f7', borderRadius: 8 }}
           />
         </div>
       </div>
@@ -252,7 +247,7 @@ function ConnectingLine({ inView }) {
       <svg width="100%" height="2" style={{ overflow: 'visible' }}>
         <motion.line
           x1="0%" y1="1" x2="100%" y2="1"
-          stroke="#363b54"
+          stroke="#2e3350"
           strokeWidth="1.5"
           strokeDasharray="4 4"
           initial={{ pathLength: 0, opacity: 0 }}
@@ -294,8 +289,8 @@ function HowItWorks() {
           fontFamily: 'inherit',
           fontSize: 11,
           color: '#7aa2f7',
-          letterSpacing: '0.15em',
-          textTransform: 'uppercase',
+          letterSpacing: '0.04em',
+          fontVariant: 'all-small-caps',
           marginBottom: 16,
         }}>
           How it works
@@ -304,7 +299,7 @@ function HowItWorks() {
           fontFamily: 'Inter, sans-serif',
           fontSize: 'clamp(32px, 5vw, 48px)',
           fontWeight: 700,
-          color: '#c0caf5',
+          color: '#e0e4f0',
           letterSpacing: '-0.03em',
           margin: 0,
         }}>
@@ -320,9 +315,9 @@ function HowItWorks() {
               animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 32 }}
               transition={{ duration: 0.5, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
               style={{
-                background: '#222636',
-                border: '1px solid #363c54',
-                borderRadius: 2,
+                background: '#1e2030',
+                border: '1px solid #2e3350',
+                borderRadius: 8,
                 padding: '28px 24px',
                 flex: 1,
                 minWidth: 0,
@@ -332,7 +327,7 @@ function HowItWorks() {
                 fontFamily: 'Inter, sans-serif',
                 fontSize: 56,
                 fontWeight: 800,
-                color: '#2a2d42',
+                color: '#2e3350',
                 lineHeight: 1,
                 marginBottom: 16,
                 letterSpacing: '-0.04em',
@@ -343,7 +338,7 @@ function HowItWorks() {
                 fontFamily: 'Inter, sans-serif',
                 fontSize: 16,
                 fontWeight: 600,
-                color: '#c0caf5',
+                color: '#e0e4f0',
                 marginBottom: 10,
                 letterSpacing: '-0.01em',
               }}>
@@ -352,7 +347,7 @@ function HowItWorks() {
               <div style={{
                 fontFamily: 'Inter, sans-serif',
                 fontSize: 13,
-                color: '#7982a9',
+                color: '#8891ad',
                 lineHeight: 1.65,
               }}>
                 {step.desc}
@@ -403,8 +398,8 @@ function FeatureGrid() {
           fontFamily: 'inherit',
           fontSize: 11,
           color: '#7aa2f7',
-          letterSpacing: '0.15em',
-          textTransform: 'uppercase',
+          letterSpacing: '0.04em',
+          fontVariant: 'all-small-caps',
           marginBottom: 16,
         }}>
           Features
@@ -413,7 +408,7 @@ function FeatureGrid() {
           fontFamily: 'Inter, sans-serif',
           fontSize: 'clamp(32px, 5vw, 48px)',
           fontWeight: 700,
-          color: '#c0caf5',
+          color: '#e0e4f0',
           letterSpacing: '-0.03em',
           margin: 0,
         }}>
@@ -434,20 +429,20 @@ function FeatureGrid() {
             viewport={{ once: true, margin: '-40px' }}
             transition={{ duration: 0.5, delay: i * 0.06, ease: [0.16, 1, 0.3, 1] }}
             style={{
-              background: '#222636',
-              border: '1px solid #363c54',
-              borderRadius: 2,
+              background: '#1e2030',
+              border: '1px solid #2e3350',
+              borderRadius: 8,
               padding: '32px',
               transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
             }}
-            whileHover={{ borderColor: 'rgba(122,162,247,0.3)' }}
+            whileHover={{ borderColor: '#3d3b36' }}
           >
             <div style={{
               width: 44,
               height: 44,
-              borderRadius: 12,
-              background: 'rgba(122,162,247,0.08)',
-              border: '1px solid rgba(122,162,247,0.15)',
+              borderRadius: 8,
+              background: 'rgba(122, 162, 247,0.08)',
+              border: '1px solid rgba(122, 162, 247,0.15)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -460,7 +455,7 @@ function FeatureGrid() {
               fontFamily: 'Inter, sans-serif',
               fontSize: 17,
               fontWeight: 600,
-              color: '#c0caf5',
+              color: '#e0e4f0',
               letterSpacing: '-0.01em',
               marginBottom: 10,
             }}>
@@ -469,7 +464,7 @@ function FeatureGrid() {
             <div style={{
               fontFamily: 'Inter, sans-serif',
               fontSize: 13,
-              color: '#7982a9',
+              color: '#8891ad',
               lineHeight: 1.65,
             }}>
               {f.desc}
@@ -496,8 +491,8 @@ function CommunitySection() {
           fontFamily: 'inherit',
           fontSize: 11,
           color: '#7aa2f7',
-          letterSpacing: '0.15em',
-          textTransform: 'uppercase',
+          letterSpacing: '0.04em',
+          fontVariant: 'all-small-caps',
           marginBottom: 16,
         }}>
           Community
@@ -506,7 +501,7 @@ function CommunitySection() {
           fontFamily: 'Inter, sans-serif',
           fontSize: 'clamp(32px, 5vw, 48px)',
           fontWeight: 700,
-          color: '#c0caf5',
+          color: '#e0e4f0',
           letterSpacing: '-0.03em',
           margin: 0,
         }}>
@@ -523,21 +518,21 @@ function CommunitySection() {
             viewport={{ once: true, margin: '-40px' }}
             transition={{ duration: 0.5, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
             style={{
-              background: '#222636',
-              border: '1px solid #363c54',
-              borderLeft: '3px solid #7aa2f7',
-              borderRadius: 2,
+              background: '#1e2030',
+              border: '1px solid #2e3350',
+              borderLeft: '1px solid #7aa2f7',
+              borderRadius: 8,
               padding: '28px 24px',
               cursor: 'pointer',
               transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
             }}
-            whileHover={{ borderLeftColor: '#a9c1f7', y: -2 }}
+            whileHover={{ borderLeftColor: '#d4b96a' }}
           >
             <div style={{
               fontFamily: 'Inter, sans-serif',
               fontSize: 18,
               fontWeight: 700,
-              color: '#c0caf5',
+              color: '#e0e4f0',
               letterSpacing: '-0.02em',
               marginBottom: 8,
               lineHeight: 1.3,
@@ -556,22 +551,22 @@ function CommunitySection() {
               <div style={{
                 fontFamily: 'Inter, sans-serif',
                 fontSize: 12,
-                color: '#7982a9',
+                color: '#8891ad',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 5,
               }}>
-                <span style={{ color: '#565f89' }}>◈</span> {p.modules} modules
+                <span style={{ color: '#6b6860' }}>◈</span> {p.modules} modules
               </div>
               <div style={{
                 fontFamily: 'Inter, sans-serif',
                 fontSize: 12,
-                color: '#7982a9',
+                color: '#8891ad',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 5,
               }}>
-                <span style={{ color: '#565f89' }}>◷</span> {p.time}
+                <span style={{ color: '#6b6860' }}>◷</span> {p.time}
               </div>
             </div>
           </motion.div>
@@ -585,14 +580,14 @@ function CommunitySection() {
 function FooterCTA({ onGetStarted }) {
   return (
     <section style={{
-      background: '#222436',
-      borderTop: '1px solid #363b54',
+      background: '#1e2030',
+      borderTop: '1px solid #2e3350',
       padding: '120px 32px',
       textAlign: 'center',
     }}>
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        whileInView={{ opacity: 1, scale: 1 }}
+        initial={{ opacity: 0, y: 12 }}
+        whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-60px' }}
         transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
         style={{ maxWidth: 600, margin: '0 auto' }}
@@ -601,7 +596,7 @@ function FooterCTA({ onGetStarted }) {
           fontFamily: 'Inter, sans-serif',
           fontSize: 'clamp(36px, 6vw, 64px)',
           fontWeight: 800,
-          color: '#c0caf5',
+          color: '#e0e4f0',
           letterSpacing: '-0.04em',
           lineHeight: 1.1,
           marginBottom: 40,
@@ -613,13 +608,13 @@ function FooterCTA({ onGetStarted }) {
           id="footer-cta-btn"
           style={{
             background: '#7aa2f7',
-            color: '#1a1f2e',
+            color: '#13141c',
             fontFamily: 'Inter, sans-serif',
             fontWeight: 700,
             fontSize: 16,
             letterSpacing: '-0.01em',
             border: 'none',
-            borderRadius: 2,
+            borderRadius: 8,
             padding: '16px 40px',
             cursor: 'pointer',
             transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
@@ -627,8 +622,8 @@ function FooterCTA({ onGetStarted }) {
             alignItems: 'center',
             gap: 8,
           }}
-          onMouseEnter={e => { e.target.style.background = '#a9c1f7'; e.target.style.transform = 'scale(1.02)' }}
-          onMouseLeave={e => { e.target.style.background = '#7aa2f7'; e.target.style.transform = 'scale(1)' }}
+          onMouseEnter={e => { e.target.style.background = '#d4b96a' }}
+          onMouseLeave={e => { e.target.style.background = '#7aa2f7' }}
         >
           Generate My Path <IcoArrow />
         </button>
@@ -652,10 +647,8 @@ function LandingNav({ onGetStarted }) {
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '18px 32px',
-        background: 'rgba(13,17,23,0.85)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
-        borderBottom: '1px solid #2a2d42',
+        background: '#1e2030',
+        borderBottom: '1px solid #2e3350',
       }}
     >
       {/* Logo */}
@@ -663,7 +656,7 @@ function LandingNav({ onGetStarted }) {
         fontFamily: 'Inter, sans-serif',
         fontWeight: 800,
         fontSize: 20,
-        color: '#c0caf5',
+        color: '#e0e4f0',
         letterSpacing: '-0.03em',
         display: 'flex',
         alignItems: 'center',
@@ -675,7 +668,7 @@ function LandingNav({ onGetStarted }) {
           height: 28,
           borderRadius: 8,
           background: '#7aa2f7',
-          color: '#1a1f2e',
+          color: '#13141c',
           fontFamily: 'Inter, sans-serif',
           fontWeight: 800,
           fontSize: 16,
@@ -691,7 +684,7 @@ function LandingNav({ onGetStarted }) {
           onClick={onGetStarted}
           style={{
             background: 'transparent',
-            color: '#7982a9',
+            color: '#8891ad',
             border: 'none',
             fontFamily: 'Inter, sans-serif',
             fontSize: 14,
@@ -699,8 +692,8 @@ function LandingNav({ onGetStarted }) {
             padding: '8px 16px',
             transition: 'color 0.2s ease',
           }}
-          onMouseEnter={e => { e.target.style.color = '#c0caf5' }}
-          onMouseLeave={e => { e.target.style.color = '#7982a9' }}
+          onMouseEnter={e => { e.target.style.color = '#e0e4f0' }}
+          onMouseLeave={e => { e.target.style.color = '#8891ad' }}
         >
           Sign in
         </button>
@@ -709,9 +702,9 @@ function LandingNav({ onGetStarted }) {
           id="nav-cta-btn"
           style={{
             background: '#7aa2f7',
-            color: '#1a1f2e',
+            color: '#13141c',
             border: 'none',
-            borderRadius: 2,
+            borderRadius: 8,
             fontFamily: 'Inter, sans-serif',
             fontWeight: 600,
             fontSize: 14,
@@ -719,7 +712,7 @@ function LandingNav({ onGetStarted }) {
             cursor: 'pointer',
             transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
           }}
-          onMouseEnter={e => { e.target.style.background = '#a9c1f7' }}
+          onMouseEnter={e => { e.target.style.background = '#d4b96a' }}
           onMouseLeave={e => { e.target.style.background = '#7aa2f7' }}
         >
           Get started free
@@ -756,24 +749,19 @@ function Hero({ onGetStarted }) {
             display: 'inline-flex',
             alignItems: 'center',
             gap: 8,
-            background: 'rgba(122,162,247,0.08)',
-            border: '1px solid rgba(122,162,247,0.2)',
-            borderRadius: 9999,
+            background: 'rgba(122, 162, 247,0.08)',
+            border: '1px solid rgba(122, 162, 247,0.2)',
+            borderRadius: 8,
             padding: '6px 16px 6px 10px',
             marginBottom: 40,
           }}
         >
           <span style={{
-            width: 6, height: 6, borderRadius: '50%',
-            background: '#7aa2f7',
-            display: 'inline-block',
-            animation: 'pulse 2s ease-in-out infinite',
-          }} />
-          <span style={{
             fontFamily: 'inherit',
-            fontSize: 11,
-            color: '#7aa2f7',
-            letterSpacing: '0.1em',
+            fontSize: 12,
+            color: '#8891ad',
+            fontVariant: 'all-small-caps',
+            letterSpacing: '0.06em',
           }}>
             Free and open source
           </span>
@@ -786,7 +774,7 @@ function Hero({ onGetStarted }) {
           fontSize: 'clamp(52px, 7vw, 88px)',
           letterSpacing: '-0.04em',
           lineHeight: 1.0,
-          color: '#c0caf5',
+          color: '#e0e4f0',
           margin: 0,
         }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0 14px', marginBottom: 4 }}>
@@ -811,7 +799,7 @@ function Hero({ onGetStarted }) {
                 transition={{ delay: 0.36 + i * 0.08, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                 style={{
                   display: 'inline-block',
-                  color: word === 'the' || word === 'path.' ? '#7aa2f7' : '#c0caf5',
+                  color: word === 'the' || word === 'path.' ? '#7aa2f7' : '#e0e4f0',
                 }}
               >
                 {word}
@@ -826,7 +814,7 @@ function Hero({ onGetStarted }) {
           style={{
             fontFamily: 'Inter, sans-serif',
             fontSize: 'clamp(15px, 2vw, 18px)',
-            color: '#7982a9',
+            color: '#8891ad',
             lineHeight: 1.7,
             maxWidth: 480,
             margin: '28px 0 44px',
@@ -843,9 +831,9 @@ function Hero({ onGetStarted }) {
             id="hero-cta-btn"
             style={{
               background: '#7aa2f7',
-              color: '#1a1f2e',
+              color: '#13141c',
               border: 'none',
-              borderRadius: 9999,
+              borderRadius: 8,
               fontFamily: 'Inter, sans-serif',
               fontWeight: 700,
               fontSize: 16,
@@ -856,22 +844,13 @@ function Hero({ onGetStarted }) {
               display: 'inline-flex',
               alignItems: 'center',
               gap: 8,
-              boxShadow: '0 0 0 0 rgba(122,162,247,0)',
             }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = '#a9c1f7'
-              e.currentTarget.style.transform = 'scale(1.03)'
-              e.currentTarget.style.boxShadow = '0 0 24px rgba(122,162,247,0.3)'
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = '#7aa2f7'
-              e.currentTarget.style.transform = 'scale(1)'
-              e.currentTarget.style.boxShadow = '0 0 0 0 rgba(122,162,247,0)'
-            }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#d4b96a' }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#7aa2f7' }}
           >
-            Generate My Path <IcoArrow />
+            Generate my path <IcoArrow />
           </button>
-          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#565f89' }}>
+          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#6b6860' }}>
             Free to start · No card required
           </span>
         </motion.div>
@@ -905,16 +884,11 @@ export default function LandingPage({ onGetStarted }) {
   return (
     <div style={{
       minHeight: '100vh',
-      background: '#1a1f2e',
-      color: '#c0caf5',
+      background: '#13141c',
+      color: '#e0e4f0',
       overflowX: 'hidden',
     }}>
-      {/* Pulse animation for eyebrow dot */}
       <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.4; }
-        }
         @media (max-width: 768px) {
           .landing-hero-flex { flex-direction: column !important; }
           .landing-hero-card { display: none !important; }
@@ -927,9 +901,7 @@ export default function LandingPage({ onGetStarted }) {
 
       <LandingNav onGetStarted={onGetStarted} />
 
-      {/* Hero with noise */}
       <div style={{ position: 'relative' }}>
-        <NoiseHero />
         <div style={{ position: 'relative', zIndex: 1 }}>
           <div
             className="landing-hero-flex"
@@ -949,24 +921,19 @@ export default function LandingPage({ onGetStarted }) {
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 8,
-                  background: 'rgba(122,162,247,0.08)',
-                  border: '1px solid rgba(122,162,247,0.2)',
-                  borderRadius: 9999,
+                  background: 'rgba(122, 162, 247,0.08)',
+                  border: '1px solid rgba(122, 162, 247,0.2)',
+                  borderRadius: 8,
                   padding: '6px 16px 6px 10px',
                   marginBottom: 40,
                 }}
               >
                 <span style={{
-                  width: 6, height: 6, borderRadius: '50%',
-                  background: '#7aa2f7',
-                  display: 'inline-block',
-                  animation: 'pulse 2s ease-in-out infinite',
-                }} />
-                <span style={{
                   fontFamily: 'inherit',
-                  fontSize: 11,
-                  color: '#7aa2f7',
-                  letterSpacing: '0.1em',
+                  fontSize: 12,
+                  color: '#8891ad',
+                  fontVariant: 'all-small-caps',
+                  letterSpacing: '0.06em',
                 }}>
                   Free and open source
                 </span>
@@ -978,7 +945,7 @@ export default function LandingPage({ onGetStarted }) {
                 fontSize: 'clamp(52px, 6.5vw, 88px)',
                 letterSpacing: '-0.04em',
                 lineHeight: 1.0,
-                color: '#c0caf5',
+                color: '#e0e4f0',
                 margin: 0,
               }}>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0 14px', marginBottom: 4 }}>
@@ -1003,7 +970,7 @@ export default function LandingPage({ onGetStarted }) {
                       transition={{ delay: 0.36 + i * 0.08, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                       style={{
                         display: 'inline-block',
-                        color: i > 0 ? '#7aa2f7' : '#c0caf5',
+                        color: i > 0 ? '#7aa2f7' : '#e0e4f0',
                       }}
                     >
                       {word}
@@ -1017,7 +984,7 @@ export default function LandingPage({ onGetStarted }) {
                 style={{
                   fontFamily: 'Inter, sans-serif',
                   fontSize: 'clamp(15px, 1.8vw, 18px)',
-                  color: '#7982a9',
+                  color: '#8891ad',
                   lineHeight: 1.7,
                   maxWidth: 480,
                   margin: '28px 0 44px',
@@ -1033,9 +1000,9 @@ export default function LandingPage({ onGetStarted }) {
                   id="hero-cta-btn"
                   style={{
                     background: '#7aa2f7',
-                    color: '#1a1f2e',
+                    color: '#13141c',
                     border: 'none',
-                    borderRadius: 9999,
+                    borderRadius: 8,
                     fontFamily: 'Inter, sans-serif',
                     fontWeight: 700,
                     fontSize: 16,
@@ -1047,20 +1014,12 @@ export default function LandingPage({ onGetStarted }) {
                     alignItems: 'center',
                     gap: 8,
                   }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.background = '#a9c1f7'
-                    e.currentTarget.style.transform = 'scale(1.03)'
-                    e.currentTarget.style.boxShadow = '0 0 28px rgba(122,162,247,0.35)'
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.background = '#7aa2f7'
-                    e.currentTarget.style.transform = 'scale(1)'
-                    e.currentTarget.style.boxShadow = 'none'
-                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = '#d4b96a' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = '#7aa2f7' }}
                 >
-                  Generate My Path →
+                  Generate my path →
                 </button>
-                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#565f89' }}>
+                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#6b6860' }}>
                   Free to start · No card required
                 </span>
               </motion.div>
@@ -1078,25 +1037,25 @@ export default function LandingPage({ onGetStarted }) {
           position: 'absolute',
           bottom: 0, left: 0, right: 0,
           height: 120,
-          background: '#1a1f2e',
+          background: '#13141c',
           pointerEvents: 'none',
         }} />
       </div>
 
       {/* Divider line */}
-      <div style={{ height: 1, background: '#2a2d42', maxWidth: 1200, margin: '0 auto 0', marginLeft: 32, marginRight: 32 }} />
+      <div style={{ height: 1, background: '#2e3350', maxWidth: 1200, margin: '0 auto 0', marginLeft: 32, marginRight: 32 }} />
 
       {/* How It Works */}
       <HowItWorks />
 
       {/* Divider */}
-      <div style={{ height: 1, background: '#2a2d42', maxWidth: 1200, margin: '0 32px' }} />
+      <div style={{ height: 1, background: '#2e3350', maxWidth: 1200, margin: '0 32px' }} />
 
       {/* Feature Grid */}
       <FeatureGrid />
 
       {/* Divider */}
-      <div style={{ height: 1, background: '#2a2d42', maxWidth: 1200, margin: '0 32px' }} />
+      <div style={{ height: 1, background: '#2e3350', maxWidth: 1200, margin: '0 32px' }} />
 
       {/* Community */}
       <CommunitySection />

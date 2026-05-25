@@ -32,7 +32,7 @@ export function OfflineNotesButton({ moduleId, token, moduleTitle }) {
     <button 
       onClick={handleDownload}
       disabled={isLoading}
-      className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded hover:bg-white/10 transition-colors text-sm text-slate-300 disabled:opacity-50"
+      className="flex items-center gap-2 px-4 py-2 bg-subtle border border-border rounded-lg hover:bg-overlay transition-colors text-sm text-text-secondary disabled:opacity-50"
     >
       {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
       <span>{isLoading ? 'Generating...' : 'Offline Notes'}</span>
