@@ -9,8 +9,10 @@ function SkillGraph({ token }) {
   const [data, setData] = useState({ nodes: [], links: [] });
   const [loading, setLoading] = useState(true);
   const graphRef = useRef();
+  const containerRef = useRef();
 
   const [pulse, setPulse] = useState(1);
+  const [dims, setDims] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
     fetch(`${API}/career/skill-graph`, { headers: { Authorization: `Bearer ${token}` } })
@@ -35,12 +37,24 @@ function SkillGraph({ token }) {
     return () => clearInterval(interval);
   }, [loading]);
 
+  // ForceGraph2D falls back to the window size unless explicitly told the
+  // container's dimensions, which overflows this card's clipped bounds.
+  useEffect(() => {
+    if (loading || !containerRef.current) return;
+    const el = containerRef.current;
+    const update = () => setDims({ width: el.clientWidth, height: el.clientHeight });
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [loading]);
+
   if (loading) {
     return <div className="h-[400px] flex items-center justify-center text-slate-500"><Loader2 className="w-8 h-8 animate-spin text-cyan" /></div>;
   }
 
   return (
-    <div className="h-[500px] w-full rounded-2xl overflow-hidden border border-white/5 bg-black/30 relative">
+    <div ref={containerRef} className="h-[500px] w-full rounded-2xl overflow-hidden border border-white/5 bg-black/30 relative">
       <div className="absolute top-4 left-4 z-10 bg-black/50 p-3 rounded-2xl backdrop-blur border border-white/5 text-xs text-slate-300">
         <h4 className="font-bold text-white mb-2 uppercase tracking-wider text-xs">Skill Graph</h4>
         <div className="flex items-center gap-2 mb-1"><div className="w-3 h-3 rounded-2xl bg-mastered shadow-[0_0_8px_rgba(134,196,187,0.4)]" /> Mastered</div>
@@ -48,6 +62,8 @@ function SkillGraph({ token }) {
       </div>
       <ForceGraph2D
         ref={graphRef}
+        width={dims.width}
+        height={dims.height}
         graphData={data}
         nodeLabel="name"
         nodeColor={node => node.completed ? '#86c4bb' : '#475569'}
