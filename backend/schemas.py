@@ -57,6 +57,14 @@ class CoursePublicResponse(BaseModel):
         from_attributes = True
 
 
+class PaginatedCoursesResponse(BaseModel):
+    """Envelope for the paginated/filterable /courses/public marketplace listing."""
+    items: List[CoursePublicResponse]
+    total: int
+    limit: int
+    offset: int
+
+
 # ── Quiz ──────────────────────────────────────────────────────────────────────
 class QuizQuestion(BaseModel):
     question: str
@@ -153,4 +161,12 @@ class SkillLink(BaseModel):
 class SkillGraphResponse(BaseModel):
     nodes: List[SkillNode]
     links: List[SkillLink]
+
+# ── Progress Analytics ────────────────────────────────────────────────────
+class ProgressResponse(BaseModel):
+    courses_count: int
+    total_modules: int
+    modules_completed: int
+    completion_rate: float
+    last_completed_at: Optional[datetime.datetime] = None
 

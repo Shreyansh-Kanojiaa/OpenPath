@@ -133,14 +133,16 @@ OpenPath/
 ├── assets/                    # Project screenshots and design mockups
 ├── backend/                   # FastAPI REST API & Gemini Orchestration
 │   ├── alembic/               # Database migrations
-│   ├── auth.py                # JWT creation and password verification
-│   ├── database.py            # SQLAlchemy engine, session maker, DB base
-│   ├── main.py                # FastAPI routes and middleware configuration
-│   ├── migrate_db.py          # Auto-migration utilities
-│   ├── models.py              # SQLAlchemy database schemas
-│   ├── schemas.py             # Pydantic data schemas
-│   └── services.py            # Gemini 2.5 Flash prompts, transcript generation, YouTube search
-├── frontend/                  # Legacy/Prototyping Streamlit interface
+│   ├── routers/                # FastAPI routers (auth, courses, modules, quiz, career)
+│   ├── tests/                  # pytest suite
+│   ├── auth.py                 # JWT creation and password verification
+│   ├── database.py             # SQLAlchemy engine, session maker, DB base
+│   ├── main.py                  # FastAPI app composition root & middleware configuration
+│   ├── migrate_db.py            # Auto-migration utilities
+│   ├── models.py                # SQLAlchemy database schemas
+│   ├── schemas.py                # Pydantic data schemas
+│   └── services.py               # Gemini 2.5 Flash prompts, transcript generation, YouTube search
+├── legacy/streamlit/           # Legacy/Prototyping Streamlit interface (superseded by react-frontend)
 ├── react-frontend/            # High-fidelity React UI (Tokyo Night design)
 │   ├── src/
 │   │   ├── components/ui/     # Reusable Tokyo Night atomic components
@@ -153,6 +155,7 @@ OpenPath/
 ├── docker/                    # Docker infrastructure config files
 ├── docker-compose.yml         # Containerized services orchestrator
 ├── requirements.txt           # Python application packages list
+├── requirements-dev.txt       # Test-only dependencies (pytest, httpx, pytest-mock)
 └── README.md                  # Comprehensive project documentation
 ```
 

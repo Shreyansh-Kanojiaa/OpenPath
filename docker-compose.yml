@@ -7,7 +7,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-openpath}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-openpath_secret}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your .env file (see .env.example)}
       POSTGRES_DB: ${POSTGRES_DB:-openpath_db}
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -24,13 +24,15 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "${BACKEND_PORT:-8000}:8000"
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-openpath}:${POSTGRES_PASSWORD:-openpath_secret}@db:5432/${POSTGRES_DB:-openpath_db}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-openpath}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your .env file (see .env.example)}@db:5432/${POSTGRES_DB:-openpath_db}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-changeme_super_secret_openpath_key_2026}
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?Set JWT_SECRET_KEY in your .env file (see .env.example)}
       ALGORITHM: ${ALGORITHM:-HS256}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-1440}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173,http://localhost:80,http://localhost}
     depends_on:
       db:
         condition: service_healthy
@@ -42,7 +44,7 @@ services:
       dockerfile: Dockerfile.frontend
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "${FRONTEND_PORT:-80}:80"
     depends_on:
       - backend
 

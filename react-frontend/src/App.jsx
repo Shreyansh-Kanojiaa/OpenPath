@@ -4,11 +4,12 @@ import LandingPage from './LandingPage'
 import { LiveTutor } from './features/LiveTutor'
 import { OfflineNotesButton } from './features/OfflineNotes'
 import { CareerHub } from './features/CareerHub'
-import { Bot, Maximize2, Minimize2 } from 'lucide-react'
+import DotGrid from './components/DotGrid'
+import { Bot, Maximize2, Minimize2, MessageCircle } from 'lucide-react'
 // ─────────────────────────────────────────────────────────────────────────────
 // DESIGN SYSTEM & UTILS
 // ─────────────────────────────────────────────────────────────────────────────
-const API = `http://${window.location.hostname}:8000`
+const API = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8000`
 
 const FADE_UP = {
   initial: { opacity: 0, y: 10 },
@@ -55,7 +56,7 @@ function AmbientBackground() {
         }}
         transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
         className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] rounded-full"
-        style={{ background: 'radial-gradient(circle, rgba(122,162,247,0.06) 0%, transparent 60%)' }}
+        style={{ background: 'radial-gradient(circle, rgba(134,196,187,0.07) 0%, transparent 60%)' }}
       />
       <motion.div
         animate={{
@@ -65,16 +66,9 @@ function AmbientBackground() {
         }}
         transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
         className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full"
-        style={{ background: 'radial-gradient(circle, rgba(201,169,110,0.06) 0%, transparent 60%)' }}
+        style={{ background: 'radial-gradient(circle, rgba(134,196,187,0.04) 0%, transparent 60%)' }}
       />
-      <div 
-        className="absolute inset-0 opacity-[0.03]" 
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M40 0H0v40h40V0zM20 0v40M40 20H0' stroke='%23ffffff' fill='none' fill-rule='evenodd'/%3E%3C/svg%3E")`,
-          maskImage: 'linear-gradient(to bottom, transparent, black, transparent)',
-          WebkitMaskImage: 'linear-gradient(to bottom, transparent, black, transparent)'
-        }} 
-      />
+      <DotGrid />
     </div>
   )
 }
@@ -98,15 +92,63 @@ function Badge({ children, variant = 'cyan' }) {
 
 function ProgressBar({ value = 0, className = "" }) {
   return (
-    <div className={`w-full h-1.5 bg-white/5 rounded-[2px] overflow-hidden ${className}`}>
+    <div className={`w-full h-1.5 bg-white/5 rounded-2xl overflow-hidden ${className}`}>
       <motion.div 
         initial={{ width: 0 }}
         whileInView={{ width: `${Math.min(value, 1) * 100}%` }}
         transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-        className="h-full bg-cyan rounded-[2px] shadow-blue-glow-sm"
+        className="h-full bg-cyan rounded-2xl shadow-blue-glow-sm"
       />
     </div>
   )
+}
+
+function RingProgress({ value = 0, size = 56, stroke = 4 }) {
+  const r = (size - stroke) / 2
+  const c = 2 * Math.PI * r
+  return (
+    <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
+      <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-full -rotate-90">
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={stroke} />
+        <motion.circle
+          cx={size / 2} cy={size / 2} r={r} fill="none"
+          stroke="#86c4bb" strokeWidth={stroke} strokeLinecap="round"
+          strokeDasharray={c}
+          initial={{ strokeDashoffset: c }}
+          animate={{ strokeDashoffset: c * (1 - value) }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center text-[11px] font-mono font-bold text-cyan">
+        {Math.round(value * 100)}%
+      </div>
+    </div>
+  )
+}
+
+// Backend doesn't model "weeks" — these are synthesized purely for display,
+// grouped around whichever module is currently active so the path view reads like a syllabus.
+function buildWeekGroups(mods, activeId) {
+  const groups = []
+  let i = 0
+  let weekNum = 1
+  while (i < mods.length) {
+    if (mods[i].id === activeId) {
+      groups.push({ label: `Week ${weekNum}`, modules: [mods[i]] })
+      weekNum += 1
+      i += 1
+      continue
+    }
+    const chunk = []
+    while (chunk.length < 2 && i < mods.length && mods[i].id !== activeId) {
+      chunk.push(mods[i])
+      i += 1
+    }
+    const start = weekNum
+    weekNum += chunk.length
+    groups.push({ label: chunk.length > 1 ? `Week ${start}-${weekNum - 1}` : `Week ${start}`, modules: chunk })
+  }
+  return groups
 }
 
 function Button({ children, onClick, variant = 'primary', className = "", disabled = false, type = 'button' }) {
@@ -121,7 +163,7 @@ function Button({ children, onClick, variant = 'primary', className = "", disabl
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`px-6 py-2.5 rounded-[2px] text-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${styles[variant]} ${className}`}
+      className={`px-6 py-2.5 rounded-full text-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${styles[variant]} ${className}`}
     >
       {children}
     </button>
@@ -154,12 +196,12 @@ function NavPill({ active, setPage, user, onLogout }) {
               {active === item.id && (
                 <motion.div
                   layoutId="pill-bg"
-                  className="absolute inset-x-[-12px] inset-y-[-4px] bg-white/10 rounded-[2px] z-[-1]"
+                  className="absolute inset-x-[-12px] inset-y-[-4px] bg-white/10 rounded-2xl z-[-1]"
                   transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
                 />
               )}
               <span className="opacity-80">{item.icon}</span>
-              <span className="hidden md:inline font-display text-xs">{item.label}</span>
+              <span className="hidden md:inline text-xs font-medium">{item.label}</span>
             </span>
           </button>
         ))}
@@ -167,7 +209,7 @@ function NavPill({ active, setPage, user, onLogout }) {
         <div className="relative">
           <button 
             onClick={() => setShowUser(!showUser)}
-            className="w-9 h-9 rounded-[2px] bg-blue/10 border border-blue/20 flex items-center justify-center text-blue hover:bg-blue/20 transition-all overflow-hidden font-display text-sm font-bold"
+            className="w-9 h-9 rounded-full bg-blue/10 border border-blue/20 flex items-center justify-center text-blue hover:bg-blue/20 transition-all overflow-hidden text-sm font-bold"
           >
             {user?.username?.[0].toUpperCase() || 'U'}
           </button>
@@ -181,7 +223,7 @@ function NavPill({ active, setPage, user, onLogout }) {
               >
                 <div className="px-3 py-2 mb-2 border-b border-white/5">
                   <div className="text-[10px] text-slate-500 mb-1">Account</div>
-                  <div className="text-sm font-display font-semibold truncate">{user?.username}</div>
+                  <div className="text-sm font-semibold truncate">{user?.username}</div>
                 </div>
                 <button 
                   onClick={onLogout}
@@ -249,9 +291,9 @@ function AuthScreen({ onLogin }) {
       <div className="hidden lg:flex flex-col justify-center p-20 relative overflow-hidden bg-surface/50 border-r border-white/5 z-10 backdrop-blur-sm">
         <motion.div {...FADE_UP} className="relative z-10">
           <Badge>OpenPath</Badge>
-          <h1 className="text-8xl font-bold mt-8 mb-10 leading-tight font-display tracking-tight">
-            Learn anything.<br />
-            <span className="text-shimmer">Build your path.</span>
+          <h1 className="text-7xl mt-8 mb-10 leading-[1.05] font-display tracking-tight">
+            Skip the rabbit holes.<br />
+            <span className="text-cyan italic">Follow one clear path.</span>
           </h1>
           <p className="text-xl text-slate-400 max-w-md leading-relaxed border-l border-blue/30 pl-8 font-sans">
             OpenPath uses AI to build a structured, video-backed learning track for any skill — at any level.
@@ -271,7 +313,7 @@ function AuthScreen({ onLogin }) {
                 <button
                   key={m}
                   onClick={() => { setMode(m); setErr(''); setInfo('') }}
-                  className={`flex-1 py-2.5 text-[10px] uppercase tracking-[0.2em] font-display font-bold rounded transition-all ${mode === m ? 'bg-blue text-charcoal-900 shadow-blue-glow' : 'text-slate-500'}`}
+                  className={`flex-1 py-2.5 text-[10px] uppercase tracking-[0.2em] font-bold rounded-lg transition-all ${mode === m ? 'bg-blue text-charcoal-900 shadow-blue-glow' : 'text-slate-500'}`}
                 >
                   {m === 'login' ? 'Sign in' : 'Create account'}
                 </button>
@@ -336,7 +378,7 @@ function AuthScreen({ onLogin }) {
               {info && <p className="text-[11px] text-mastered font-mono px-4">{info}</p>}
               {err && <p className="text-[11px] text-rose-400 font-mono px-4">{err}</p>}
 
-              <Button type="submit" disabled={loading} className="w-full py-5 mt-6 font-display text-base tracking-[0.2em] uppercase">
+              <Button type="submit" disabled={loading} className="w-full py-5 mt-6 text-base font-semibold tracking-[0.1em] uppercase">
                 {loading ? 'Loading...' : mode === 'login' ? 'Sign in' : 'Create account'}
               </Button>
             </form>
@@ -400,7 +442,7 @@ function Dashboard({ courses, onSelectCourse, user }) {
               
               <div className="space-y-8 relative z-10">
                 <div className="flex items-center justify-between">
-                  <span className={`text-[10px] px-2.5 py-1 rounded-[2px] font-mono tracking-widest uppercase border ${progress === 1 ? 'bg-mastered/10 text-mastered border-mastered/20' : 'bg-white/5 text-slate-400 border-white/10'}`}>
+                  <span className={`text-[10px] px-2.5 py-1 rounded-2xl font-mono tracking-widest uppercase border ${progress === 1 ? 'bg-mastered/10 text-mastered border-mastered/20' : 'bg-white/5 text-slate-400 border-white/10'}`}>
                     {progress === 1 ? 'Mastered' : course.time_commitment}
                   </span>
                   <span className="text-xs text-slate-500">{Math.round(progress * 100)}%</span>
@@ -415,7 +457,7 @@ function Dashboard({ courses, onSelectCourse, user }) {
                   {course.modules.slice(0, 16).map((m, mi) => (
                     <div 
                       key={mi} 
-                      className={`w-2 h-2 rounded-[2px] transition-all duration-300 ${m.is_completed || m.is_skipped ? 'bg-mastered shadow-[0_0_8px_rgba(201,169,110,0.4)]' : 'bg-white/10 border border-white/5'}`} 
+                      className={`w-2 h-2 rounded-2xl transition-all duration-300 ${m.is_completed || m.is_skipped ? 'bg-mastered shadow-[0_0_8px_rgba(201,169,110,0.4)]' : 'bg-white/10 border border-white/5'}`} 
                     />
                   ))}
                   {course.modules.length > 16 && <span className="text-[10px] text-slate-600 self-center ml-2 font-black">+{course.modules.length - 16}</span>}
@@ -436,9 +478,9 @@ function Dashboard({ courses, onSelectCourse, user }) {
         <motion.button
           {...BENTO_ITEM}
           transition={{ delay: (courses.length % 8) * 0.1 }}
-          className="md:col-span-2 lg:col-span-1 rounded-[2px] border-2 border-dashed border-white/5 hover:border-blue/40 hover:bg-blue/5 transition-all flex flex-col items-center justify-center gap-8 group cursor-pointer min-h-[420px]"
+          className="md:col-span-2 lg:col-span-1 rounded-2xl border-2 border-dashed border-white/5 hover:border-blue/40 hover:bg-blue/5 transition-all flex flex-col items-center justify-center gap-8 group cursor-pointer min-h-[420px]"
         >
-          <div className="w-16 h-16 rounded-[2px] bg-white/5 flex items-center justify-center text-slate-500 group-hover:text-cyan group-hover:scale-105 group-hover:bg-blue/10 transition-all duration-500">
+          <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-slate-500 group-hover:text-cyan group-hover:scale-105 group-hover:bg-blue/10 transition-all duration-500">
             <IcoPlus />
           </div>
           <span className="text-sm text-slate-500 group-hover:text-cyan transition-colors">New course</span>
@@ -496,7 +538,7 @@ function SkipQuizPanel({ mod, token, onSkip }) {
     <div className="md:col-span-2 glass-card p-10 flex flex-col justify-center items-center text-center space-y-8 bg-blue/5 border-blue/10 group cursor-pointer hover:bg-blue/10 transition-all duration-500" onClick={startQuiz}>
       <div className="w-20 h-20 rounded bg-blue/10 flex items-center justify-center text-blue group-hover:scale-110 transition-transform duration-700"><IcoCompass /></div>
       <div className="space-y-4">
-        <h4 className="text-lg font-black font-display uppercase tracking-[0.2em] text-white">Skip this module</h4>
+        <h4 className="text-sm font-bold font-mono uppercase tracking-[0.2em] text-white">Skip this module</h4>
         <p className="text-xs text-slate-500 font-mono tracking-wide leading-relaxed px-4">Already know this? Take a quick quiz to skip it.</p>
       </div>
       {err && <p className="text-xs text-rose-400 font-mono">{err}</p>}
@@ -541,7 +583,7 @@ function SkipQuizPanel({ mod, token, onSkip }) {
                 key={i}
                 onClick={() => handleAnswer(i)}
                 disabled={selected !== null}
-                className={`w-full text-left text-xs font-mono px-4 py-3 rounded-[2px] border transition-all duration-300 ${
+                className={`w-full text-left text-xs font-mono px-4 py-3 rounded-2xl border transition-all duration-300 ${
                   isCorrect ? 'bg-mastered/10 border-mastered/40 text-mastered' :
                   isWrong ? 'bg-rose-500/10 border-rose-500/40 text-rose-400' :
                   isSelected ? 'bg-blue/10 border-blue/40 text-blue' :
@@ -736,12 +778,12 @@ function WatchGatedVideo({ mod, onComplete, token }) {
                   {/* Activity indicators */}
                   <div className="flex items-center gap-3 flex-shrink-0">
                     <div className="flex items-center gap-1.5" title={ytPlaying ? 'Video playing' : 'Video paused'}>
-                      <div className={`w-2 h-2 rounded-[2px] transition-colors duration-300 ${ytPlaying ? 'bg-mastered animate-pulse' : 'bg-slate-600'}`} />
+                      <div className={`w-2 h-2 rounded-2xl transition-colors duration-300 ${ytPlaying ? 'bg-mastered animate-pulse' : 'bg-slate-600'}`} />
                       <span className="text-[9px] font-mono uppercase text-slate-500">{ytPlaying ? 'Playing' : 'Paused'}</span>
                     </div>
                     <div className="w-px h-4 bg-white/10" />
                     <div className="flex items-center gap-1.5" title={userActive ? 'User active' : 'User idle — watching paused'}>
-                      <div className={`w-2 h-2 rounded-[2px] transition-colors duration-300 ${userActive ? 'bg-cyan animate-pulse' : 'bg-slate-600'}`} />
+                      <div className={`w-2 h-2 rounded-2xl transition-colors duration-300 ${userActive ? 'bg-cyan animate-pulse' : 'bg-slate-600'}`} />
                       <span className="text-[9px] font-mono uppercase text-slate-500">{userActive ? 'Active' : 'Idle'}</span>
                     </div>
                   </div>
@@ -750,7 +792,7 @@ function WatchGatedVideo({ mod, onComplete, token }) {
                   <button
                     disabled={!canComplete}
                     onClick={handleComplete}
-                    className={`flex-shrink-0 px-8 py-3 rounded-[2px] text-sm font-bold font-display uppercase tracking-wider transition-all duration-300 ${
+                    className={`flex-shrink-0 px-8 py-3 rounded-full text-sm font-bold uppercase tracking-wider transition-all duration-300 ${
                       canComplete
                         ? 'bg-mastered text-black hover:shadow-blue-glow-sm hover:scale-[1.03] cursor-pointer'
                         : 'bg-white/5 text-slate-600 cursor-not-allowed'
@@ -765,7 +807,7 @@ function WatchGatedVideo({ mod, onComplete, token }) {
         </>
       ) : (
         <div className="w-full h-full glass-card flex items-center justify-center flex-col gap-6 text-slate-600 bg-surface">
-          <motion.div animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: 'linear' }} className="w-20 h-20 rounded-[2px] border border-dashed border-white/20 flex items-center justify-center opacity-30"><IcoCompass /></motion.div>
+          <motion.div animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: 'linear' }} className="w-20 h-20 rounded-2xl border border-dashed border-white/20 flex items-center justify-center opacity-30"><IcoCompass /></motion.div>
           <p className="font-mono text-xs uppercase tracking-[0.4em]">Loading video...</p>
         </div>
       )}
@@ -773,153 +815,297 @@ function WatchGatedVideo({ mod, onComplete, token }) {
   )
 }
 
-function CourseView({ course, onBack, onComplete, onSaveNotes, token }) {
+function CourseView({ course, onBack, onComplete, onSaveNotes, token, user }) {
   const mods = course.modules
   const initMod = mods.find(m => !m.is_completed && !m.is_skipped) || mods[0]
   const [activeId, setActiveId] = useState(initMod?.id)
   const activeMod = mods.find(m => m.id === activeId)
+  const activeIndex = mods.findIndex(m => m.id === activeId)
   const completedCount = mods.filter(m => m.is_completed || m.is_skipped).length
   const progress = completedCount / mods.length
+  const [mode, setMode] = useState('path') // 'path' | 'lesson'
+  const [tab, setTab] = useState('transcript') // 'transcript' | 'notes' | 'resources'
   const [zenMode, setZenMode] = useState(false)
   const [showTutor, setShowTutor] = useState(false)
 
+  const openLesson = (id) => { setActiveId(id); setMode('lesson'); setTab('transcript') }
+  const weekGroups = buildWeekGroups(mods, activeId)
+  const activeWeekLabel = weekGroups.find(g => g.modules.some(m => m.id === activeId))?.label || ''
+
+  const NAV_ITEMS = [
+    { id: 'path', label: 'My path', icon: <IcoGrid /> },
+    { id: 'lessons', label: 'Lessons', icon: <IcoCompass /> },
+    { id: 'tutor', label: 'AI Tutor', icon: <Bot className="w-5 h-5" /> },
+    { id: 'progress', label: 'Progress', icon: <IcoCheck /> },
+  ]
+
   return (
-    <div className={`flex w-full overflow-hidden bg-base ${zenMode ? 'fixed inset-0 z-50 pt-0 h-screen' : 'h-screen pt-24'}`}>
-      {!zenMode && (
-        <aside className="w-96 border-r border-white/5 flex flex-col glass bg-surface/40 backdrop-blur-3xl relative z-20">
-        <div className="p-10 border-b border-white/5">
-          <button onClick={onBack} className="flex items-center gap-2 text-slate-500 hover:text-white transition-all text-sm mb-8 group">
-            <span className="group-hover:-translate-x-1 transition-transform duration-300"><IcoBack /></span> Back
-          </button>
-          <h2 className="text-2xl font-bold font-display leading-snug mb-6">{course.skill_name}</h2>
-          <div className="space-y-4">
-             <div className="flex justify-between text-xs text-slate-500">
-               <span>Progress</span>
-               <span className="text-blue">{Math.round(progress * 100)}%</span>
-             </div>
-             <ProgressBar value={progress} />
+    <div className={`flex w-full overflow-hidden ${zenMode ? 'fixed inset-0 z-50 pt-0 h-screen' : 'h-screen pt-24'}`}>
+      {mode === 'path' && !zenMode && (
+        <aside className="w-64 border-r border-white/5 flex flex-col bg-surface/40 backdrop-blur-3xl relative z-20 flex-shrink-0">
+          <div className="p-6 border-b border-white/5">
+            <button onClick={onBack} className="flex items-center gap-2 text-slate-500 hover:text-white transition-all text-sm mb-6 group">
+              <span className="group-hover:-translate-x-1 transition-transform duration-300"><IcoBack /></span> Back
+            </button>
+            <div className="flex items-center gap-2">
+              <span className="w-7 h-7 rounded-full bg-cyan/15 border border-cyan/30 flex items-center justify-center text-cyan text-xs font-bold flex-shrink-0">O</span>
+              <span className="font-semibold text-sm truncate">{course.skill_name}</span>
+            </div>
           </div>
-        </div>
-        
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-2">
-          {mods.map((m, i) => {
-            const isActive = m.id === activeId
-            const isDone = m.is_completed || m.is_skipped
-            return (
-              <motion.button
-                key={m.id}
-                onClick={() => setActiveId(m.id)}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: i * 0.05, ease: [0.16, 1, 0.3, 1] }}
-                className={`w-full text-left p-4 rounded-[2px] border transition-all duration-300 group relative overflow-hidden ${
-                  isActive 
-                    ? 'bg-cyan/10 border-cyan/40 text-white shadow-blue-glow-sm' 
-                    : 'bg-transparent border-transparent text-slate-500 hover:bg-white/5 hover:text-slate-200'
+
+          <nav className="flex-1 p-4 space-y-1">
+            {NAV_ITEMS.map(item => (
+              <button
+                key={item.id}
+                onClick={() => {
+                  if (item.id === 'lessons') openLesson(activeId)
+                  else if (item.id === 'tutor') setShowTutor(true)
+                  else setMode('path')
+                }}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${
+                  (item.id === 'path' && mode === 'path') || (item.id === 'lessons' && mode === 'lesson')
+                    ? 'bg-white/8 text-white font-semibold'
+                    : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
                 }`}
               >
-                <div className="flex justify-between items-center mb-2">
-                    <span className={`text-[10px] px-2 py-0.5 rounded-[2px] border font-mono tracking-widest uppercase ${
-                    isDone ? 'border-mastered/30 text-mastered bg-mastered/10' : 
-                    isActive ? 'border-cyan/40 text-cyan bg-cyan/10' : 'border-white/10 text-slate-600'
-                  }`}>
-                    Module {String(i + 1).padStart(2, '0')}
-                  </span>
-                  {isDone && <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-mastered"><IcoCheck /></motion.span>}
-                </div>
-                <div className={`text-sm font-bold font-display leading-snug tracking-tight ${isDone ? 'line-through opacity-60' : ''} ${isActive ? 'text-white' : 'group-hover:text-slate-100'}`}>
-                  {m.title}
-                </div>
-              </motion.button>
-            )
-          })}
-        </div>
-      </aside>
+                <span className="opacity-80">{item.icon}</span> {item.label}
+              </button>
+            ))}
+          </nav>
+
+          <div className="p-4 border-t border-white/5 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-cyan/15 border border-cyan/30 flex items-center justify-center text-cyan text-xs font-bold flex-shrink-0">
+              {user?.username?.[0]?.toUpperCase() || 'U'}
+            </div>
+            <div className="text-xs min-w-0">
+              <div className="font-semibold text-slate-200 truncate">{user?.username || 'You'}</div>
+              <div className="text-slate-600">Free plan</div>
+            </div>
+          </div>
+        </aside>
       )}
 
-      <main className="flex-1 overflow-y-auto custom-scrollbar relative">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeId}
+      <AnimatePresence mode="wait">
+        {mode === 'path' ? (
+          <motion.main
+            key="path"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="max-w-5xl mx-auto p-16 lg:p-24"
+            className="flex-1 overflow-y-auto custom-scrollbar"
           >
-            {activeMod && (
-              <div className="space-y-16">
-                <header>
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-                    <div className="flex items-center gap-6 text-slate-600">
-                      <Badge variant={activeMod.is_completed ? 'success' : 'cyan'}>
-                        Module {activeMod.order_index}
-                      </Badge>
-                      <div className="h-0.5 w-8 bg-white/10" />
-                      <span className="font-mono text-[10px] uppercase tracking-[0.3em]">
-                        {Math.floor(activeMod.video_duration / 60)}m {activeMod.video_duration % 60}s
-                      </span>
+            <div className="max-w-5xl mx-auto p-10 lg:p-16">
+              <div className="flex items-start justify-between gap-8 mb-12 flex-wrap">
+                <div>
+                  <div className="text-[11px] font-mono uppercase tracking-[0.25em] text-cyan mb-3">Your path</div>
+                  <h1 className="text-4xl font-display leading-tight mb-3">{course.skill_name}</h1>
+                  <p className="text-sm text-slate-500">
+                    Level {course.current_level}/10 · {mods.length} modules · {course.time_commitment}
+                  </p>
+                </div>
+                <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-slate-500">Complete</span>
+                  <RingProgress value={progress} size={64} />
+                </div>
+              </div>
+
+              <div className="space-y-10">
+                {weekGroups.map((group, gi) => {
+                  const done = group.modules.every(m => m.is_completed || m.is_skipped)
+                  const active = group.modules.some(m => m.id === activeId)
+                  return (
+                    <div key={gi}>
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-slate-500">{group.label}</span>
+                        <span className="text-[11px] font-mono uppercase tracking-widest text-slate-600">
+                          {done ? 'Done' : active ? 'In progress' : 'Up next'}
+                        </span>
+                      </div>
+                      <div className={`grid gap-4 ${group.modules.length > 1 ? 'md:grid-cols-2' : 'grid-cols-1'}`}>
+                        {group.modules.map(m => {
+                          const isDone = m.is_completed || m.is_skipped
+                          const isActive = m.id === activeId
+                          const idx = mods.findIndex(mm => mm.id === m.id)
+                          return (
+                            <button
+                              key={m.id}
+                              onClick={() => openLesson(m.id)}
+                              className={`text-left p-5 rounded-2xl border flex items-center gap-4 transition-all ${
+                                isActive ? 'bg-cyan/10 border-cyan/40 shadow-blue-glow-sm' : 'bg-surface border-white/5 hover:border-white/15 hover:bg-white/[0.03]'
+                              }`}
+                            >
+                              <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 border ${
+                                isDone ? 'bg-cyan/15 border-cyan/40 text-cyan' : isActive ? 'border-cyan/50 text-cyan' : 'border-white/15 text-slate-500'
+                              }`}>
+                                {isDone ? <IcoCheck /> : <span className="text-xs font-mono">{idx + 1}</span>}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className={`text-sm font-semibold truncate ${isDone ? 'line-through opacity-50' : ''}`}>{m.title}</div>
+                                <div className="text-xs text-slate-500 mt-0.5">
+                                  {Math.floor(m.video_duration / 60)} min{isActive ? ` · lesson ${idx + 1} of ${mods.length}` : ''}
+                                </div>
+                              </div>
+                              {isActive && (
+                                <span className="flex-shrink-0 px-4 py-2 bg-cyan text-charcoal-900 rounded-full text-xs font-bold">Resume</span>
+                              )}
+                            </button>
+                          )
+                        })}
+                      </div>
                     </div>
-                    
-                    <div className="flex items-center gap-4">
-                      <button onClick={() => setShowTutor(!showTutor)} className="flex items-center gap-2 px-4 py-2 bg-blue/10 text-blue border border-blue/20 hover:bg-blue/20 rounded transition-colors text-sm font-bold shadow-blue-glow/20 shadow-lg">
-                        <Bot className="w-4 h-4" /> Live Tutor
-                      </button>
-                      <OfflineNotesButton moduleId={activeMod.id} token={token} moduleTitle={activeMod.title} />
-                      <button onClick={() => setZenMode(!zenMode)} className="flex items-center justify-center w-9 h-9 bg-white/5 hover:bg-white/10 rounded border border-white/10 text-slate-400 transition-colors" title="Toggle Zen Mode">
-                        {zenMode ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-                      </button>
-                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </motion.main>
+        ) : (
+          <motion.main
+            key="lesson"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="flex-1 flex overflow-hidden"
+          >
+            <div className="flex-1 overflow-y-auto custom-scrollbar">
+              <div className="max-w-4xl mx-auto p-10 lg:p-14">
+                <div className="flex items-center justify-between gap-4 mb-8 flex-wrap">
+                  <button onClick={() => setMode('path')} className="flex items-center gap-2 text-slate-500 hover:text-white transition-all text-sm group">
+                    <span className="group-hover:-translate-x-1 transition-transform duration-300"><IcoBack /></span>
+                    Back to path
+                    <span className="text-slate-700">·</span>
+                    <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-slate-500">{activeWeekLabel}</span>
+                  </button>
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => setShowTutor(!showTutor)} className="flex items-center gap-2 px-4 py-2 bg-blue/10 text-blue border border-blue/20 hover:bg-blue/20 rounded-full transition-colors text-sm font-bold">
+                      <Bot className="w-4 h-4" /> Live Tutor
+                    </button>
+                    <button onClick={() => setZenMode(!zenMode)} className="flex items-center justify-center w-9 h-9 bg-white/5 hover:bg-white/10 rounded-full border border-white/10 text-slate-400 transition-colors" title="Toggle focus mode">
+                      {zenMode ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                    </button>
                   </div>
-                  <h1 className="text-4xl font-bold font-display leading-snug mb-6">{activeMod.title}</h1>
-                  <p className="text-lg text-slate-400 leading-relaxed font-sans max-w-3xl">{activeMod.description}</p>
-                </header>
+                </div>
 
                 <WatchGatedVideo mod={activeMod} onComplete={onComplete} token={token} />
 
-                <div className="grid md:grid-cols-5 gap-10">
-                  <div className="md:col-span-3 glass-card p-10 space-y-8 bg-surface/60 transition-all hover:bg-surface/80">
-                    <h4 className="text-base font-bold font-display flex items-center gap-3">
-                      <span className="text-cyan"><IcoPlus /></span> Notes
-                    </h4>
-                    <textarea 
+                <div className="mt-8 mb-6">
+                  <h1 className="text-3xl font-display leading-snug mb-2">{activeMod.title}</h1>
+                  <p className="text-sm text-slate-500">
+                    Lesson {activeIndex + 1} of {mods.length} · {activeWeekLabel} · {Math.floor(activeMod.video_duration / 60)} min
+                  </p>
+                </div>
+
+                <div className="border-b border-white/5 flex items-center gap-6 mb-6">
+                  {['transcript', 'notes', 'resources'].map(t => (
+                    <button
+                      key={t}
+                      onClick={() => setTab(t)}
+                      className={`pb-3 text-sm capitalize border-b-2 transition-colors ${tab === t ? 'border-cyan text-white font-semibold' : 'border-transparent text-slate-500 hover:text-slate-300'}`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+
+                {tab === 'transcript' && (
+                  <p className="text-sm text-slate-500 leading-relaxed py-6 max-w-xl">
+                    Transcript view isn't wired up here yet — ask the Live Tutor anything about this lesson and it'll answer grounded in the video's transcript.
+                  </p>
+                )}
+                {tab === 'notes' && (
+                  <div className="space-y-3 py-1">
+                    <textarea
                       placeholder="Write your notes here..."
                       defaultValue={activeMod.notes || ''}
                       onBlur={(e) => onSaveNotes(activeMod.id, e.target.value)}
-                      className="w-full h-48 bg-white/5 border border-white/5 rounded p-6 text-sm font-mono focus:outline-none focus:border-blue/40 transition-all resize-none shadow-inner"
+                      className="w-full h-48 bg-white/5 border border-white/5 rounded-2xl p-6 text-sm font-mono focus:outline-none focus:border-blue/40 transition-all resize-none shadow-inner"
                     />
-                    <div className="flex justify-between items-center px-2">
-                       <div className="flex gap-1">
-                         {[1,2,3].map(i => <div key={i} className="w-1 h-1 rounded-[2px] bg-cyan/40 animate-pulse" style={{ animationDelay: `${i*200}ms` }} />)}
-                       </div>
+                    <div className="flex justify-end">
                       <span className="text-[10px] font-mono text-slate-600 uppercase tracking-[0.3em]">Auto-saved</span>
                     </div>
                   </div>
-
-                  <SkipQuizPanel mod={activeMod} token={token} onSkip={onComplete} />
-                </div>
+                )}
+                {tab === 'resources' && (
+                  <div className="space-y-4 py-1">
+                    <OfflineNotesButton moduleId={activeMod.id} token={token} moduleTitle={activeMod.title} />
+                    <SkipQuizPanel mod={activeMod} token={token} onSkip={onComplete} />
+                  </div>
+                )}
               </div>
+            </div>
+
+            {!zenMode && (
+              <aside className="w-80 border-l border-white/5 flex flex-col bg-surface/40 backdrop-blur-3xl p-6 overflow-y-auto custom-scrollbar flex-shrink-0">
+                <div className="text-[11px] font-mono uppercase tracking-[0.2em] text-slate-500 mb-4">Up next in module</div>
+                <div className="space-y-2">
+                  {mods.map((m, i) => {
+                    const isDone = m.is_completed || m.is_skipped
+                    const isActive = m.id === activeId
+                    return (
+                      <button
+                        key={m.id}
+                        onClick={() => openLesson(m.id)}
+                        className={`w-full text-left p-3 rounded-xl border flex items-center gap-3 transition-all ${
+                          isActive ? 'bg-cyan/10 border-cyan/40 text-white' : 'border-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                        }`}
+                      >
+                        <span className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-mono border ${
+                          isDone ? 'bg-cyan/15 border-cyan/40 text-cyan' : isActive ? 'border-cyan/50 text-cyan' : 'border-white/15 text-slate-500'
+                        }`}>
+                          {isDone ? <IcoCheck /> : i + 1}
+                        </span>
+                        <span className="flex-1 min-w-0 text-sm truncate">{m.title}</span>
+                        {isActive && <span className="text-[9px] font-mono uppercase text-cyan flex-shrink-0">now</span>}
+                      </button>
+                    )
+                  })}
+                </div>
+
+                <button
+                  onClick={() => setShowTutor(true)}
+                  className="mt-6 text-left p-4 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/5 transition-colors"
+                >
+                  <div className="flex items-center gap-2 text-xs font-semibold text-slate-200 mb-1">
+                    <MessageCircle className="w-3.5 h-3.5 text-cyan" /> Confused? Ask the tutor
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-relaxed">It knows exactly where you are in this lesson.</p>
+                </button>
+              </aside>
             )}
-          </motion.div>
-        </AnimatePresence>
-        <AnimatePresence>
-          {showTutor && <LiveTutor moduleId={activeMod.id} token={token} onClose={() => setShowTutor(false)} />}
-        </AnimatePresence>
-      </main>
+          </motion.main>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showTutor && <LiveTutor moduleId={activeMod.id} token={token} onClose={() => setShowTutor(false)} />}
+      </AnimatePresence>
     </div>
   )
 }
 
+const DISCOVER_PAGE_SIZE = 12
+
 function DiscoverPage({ token, onEnroll }) {
   const [courses, setCourses] = useState([])
+  const [total, setTotal] = useState(0)
+  const [search, setSearch] = useState('')
+  const [offset, setOffset] = useState(0)
   const [enrolling, setEnrolling] = useState(null)
   const [loadingCourses, setLoadingCourses] = useState(true)
 
   useEffect(() => {
-    fetch(`${API}/courses/public`)
+    setLoadingCourses(true)
+    const params = new URLSearchParams({ limit: DISCOVER_PAGE_SIZE, offset })
+    if (search.trim()) params.set('skill', search.trim())
+
+    fetch(`${API}/courses/public?${params.toString()}`)
       .then(r => r.json())
-      .then(data => { setCourses(Array.isArray(data) ? data : []); setLoadingCourses(false) })
+      .then(data => {
+        setCourses(data.items ?? [])
+        setTotal(data.total ?? 0)
+        setLoadingCourses(false)
+      })
       .catch(() => setLoadingCourses(false))
-  }, [])
+  }, [search, offset])
 
   const handleEnroll = async (courseId) => {
     setEnrolling(courseId)
@@ -946,14 +1132,30 @@ function DiscoverPage({ token, onEnroll }) {
         </motion.div>
       </header>
 
+      <div className="px-4 mb-10">
+        <input
+          placeholder="Search by skill..."
+          className="w-full max-w-md bg-surface border border-border rounded px-4 py-3 text-base text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-blue transition-colors"
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setOffset(0) }}
+        />
+      </div>
+
       {loadingCourses ? (
         <div className="text-center text-slate-500 py-24">Loading courses...</div>
       ) : courses.length === 0 ? (
         <div className="text-center text-slate-500 py-24">
-          <p className="text-lg font-display">No public courses yet.</p>
-          <p className="text-sm mt-2">Be the first — generate a course and make it public from your dashboard.</p>
+          <p className="text-lg font-display">
+            {search.trim() ? `No public courses match "${search.trim()}".` : 'No public courses yet.'}
+          </p>
+          <p className="text-sm mt-2">
+            {search.trim()
+              ? 'Try a different search term.'
+              : 'Be the first — generate a course and make it public from your dashboard.'}
+          </p>
         </div>
       ) : (
+        <>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-4">
           {courses.map((c, i) => (
             <motion.div
@@ -981,6 +1183,29 @@ function DiscoverPage({ token, onEnroll }) {
             </motion.div>
           ))}
         </div>
+
+        <div className="flex items-center justify-between px-4 mt-10">
+          <p className="text-sm text-slate-500">
+            Showing {offset + 1}–{Math.min(offset + DISCOVER_PAGE_SIZE, total)} of {total}
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setOffset(Math.max(0, offset - DISCOVER_PAGE_SIZE))}
+              disabled={offset === 0}
+              className="px-4 py-2 text-sm font-semibold border border-border rounded hover:bg-blue hover:text-base hover:border-blue transition-all duration-200 disabled:opacity-40 disabled:pointer-events-none"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setOffset(offset + DISCOVER_PAGE_SIZE)}
+              disabled={offset + DISCOVER_PAGE_SIZE >= total}
+              className="px-4 py-2 text-sm font-semibold border border-border rounded hover:bg-blue hover:text-base hover:border-blue transition-all duration-200 disabled:opacity-40 disabled:pointer-events-none"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+        </>
       )}
     </div>
   )
@@ -1055,7 +1280,7 @@ function GeneratePage({ token, onGenerate, initialSkill = '' }) {
             </div>
             <input
               type="range" min="1" max="10"
-              className="w-full h-1.5 bg-border rounded-[2px] appearance-none cursor-pointer accent-blue"
+              className="w-full h-1.5 bg-border rounded-2xl appearance-none cursor-pointer accent-blue"
               value={level}
               onChange={(e) => setLevel(Number(e.target.value))}
             />
@@ -1111,7 +1336,7 @@ function GeneratePage({ token, onGenerate, initialSkill = '' }) {
           <button
             disabled={!skill.trim() || loading}
             onClick={handleGenerate}
-            className="w-full py-4 text-base font-bold bg-cyan text-base rounded-[2px] hover:shadow-blue-glow hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full py-4 text-base font-bold bg-cyan text-base rounded-2xl hover:shadow-blue-glow hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {loading ? 'Building your path...' : 'Generate my path'}
           </button>
@@ -1248,6 +1473,7 @@ export default function App() {
                 onComplete={completeModule} 
                 onSaveNotes={saveNotes}
                 token={user.token}
+                user={user}
               />
             )}
             {page === 'discover' && <DiscoverPage token={user.token} onEnroll={async () => { await refreshCourses(); setPage('dashboard') }} />}

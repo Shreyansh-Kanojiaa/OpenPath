@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Text, text
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Text, false
 from sqlalchemy.orm import relationship, validates
 import datetime
 from database import Base
@@ -50,8 +50,9 @@ class Module(Base):
     is_completed = Column(Boolean, default=False)
     is_skipped = Column(Boolean, default=False)
     video_duration = Column(Integer, default=0)
-    has_transcript = Column(Boolean, nullable=False, default=False, server_default=text('0'))
+    has_transcript = Column(Boolean, nullable=False, default=False, server_default=false())
     notes = Column(String(2000), nullable=True, default=None)
+    completed_at = Column(DateTime, nullable=True, default=None)
 
     @validates('notes')
     def validate_notes(self, key, value):

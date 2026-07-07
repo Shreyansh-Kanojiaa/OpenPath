@@ -12,6 +12,8 @@ st.set_page_config(
 
 ui.inject_css()
 
+st.warning("This is a legacy prototype UI, kept for quick manual API testing. Use react-frontend/ for all new work.")
+
 BACKEND_URL = "http://127.0.0.1:8000"
 
 # ── Session state defaults ────────────────────────────────────────────────────

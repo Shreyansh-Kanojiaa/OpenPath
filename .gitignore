@@ -37,6 +37,9 @@ yarn-error.log*
 *.db
 backend/*.db
 
+# Test artifacts
+.pytest_cache/
+
 # Env / Secrets
 .env
 .env.local

@@ -1,8 +1,9 @@
 import { useRef } from 'react'
 import { motion, useInView } from 'framer-motion'
+import DotGrid from './components/DotGrid'
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────────────────────
-// Base: #13141c  Surface: #1e2030  Border: #2e3350  Accent: #7aa2f7
+// Base: #04050a  Surface: #0a0e11  Border: #1c2326  Accent: #86c4bb
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─── ICONS ───────────────────────────────────────────────────────────────────
@@ -44,12 +45,6 @@ const IcoCheck = () => (
     <polyline points="20 6 9 17 4 12" />
   </Ico>
 )
-const IcoYT = () => (
-  <Ico className="w-5 h-5" viewBox="0 0 24 24">
-    <rect x="2" y="5" width="20" height="14" rx="3" fill="rgba(122, 162, 247,0.15)" stroke="#7aa2f7" strokeWidth="1.5" />
-    <polygon points="10,9 16,12 10,15" fill="#7aa2f7" stroke="none" />
-  </Ico>
-)
 const IcoArrow = () => (
   <Ico className="w-4 h-4">
     <line x1="5" y1="12" x2="19" y2="12" />
@@ -71,172 +66,144 @@ const inViewFadeUp = (delay = 0) => ({
   transition: { duration: 0.55, delay, ease: [0.16, 1, 0.3, 1] },
 })
 
-// ─── NOISE TEXTURE (SVG Data URI) ────────────────────────────────────────────
-const NOISE_SVG = `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.045'/%3E%3C/svg%3E")`
-
 // ─── HERO CARD MOCKUP ─────────────────────────────────────────────────────────
 function HeroCard() {
   const modules = [
-    { title: 'Foundations & Setup', dur: '18 min', done: true },
-    { title: 'Core Concepts Deep Dive', dur: '24 min', done: false },
-    { title: 'Building Real Projects', dur: '31 min', done: false },
+    { title: 'JavaScript refresher', meta: '3 lessons · 26 min', state: 'done' },
+    { title: 'Components & JSX', meta: '4 lessons · 38 min', state: 'done' },
+    { title: 'State & props', meta: 'In progress · lesson 2 of 5', state: 'active', pct: 40 },
+    { title: 'Hooks in depth', meta: 'Locked', state: 'locked', num: 4 },
   ]
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 60, rotate: 3 }}
-      animate={{ opacity: 1, x: 0, rotate: 0 }}
-      transition={{ duration: 0.9, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
-      style={{
-        background: '#1e2030',
-        border: '1px solid #2e3350',
-        borderRadius: 8,
-        padding: '28px',
-        width: '360px',
-        flexShrink: 0,
-      }}
-    >
-      {/* Card header */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-          <div style={{
-            background: 'rgba(122, 162, 247,0.12)',
-            border: '1px solid rgba(122, 162, 247,0.25)',
-            borderRadius: 8,
-            padding: '4px 10px',
-            fontSize: 11,
-            fontFamily: 'inherit',
-            color: '#7aa2f7',
-            letterSpacing: '0.08em',
-          }}>
-            Beginner
-          </div>
-          <div style={{
-            background: 'rgba(122, 162, 247,0.12)',
-            border: '1px solid rgba(122, 162, 247,0.25)',
-            borderRadius: 8,
-            padding: '4px 10px',
-            fontSize: 11,
-            fontFamily: 'inherit',
-            color: '#7aa2f7',
-            letterSpacing: '0.08em',
-          }}>
-            5 hrs/week
-          </div>
-        </div>
-        <div style={{ fontFamily: 'Inter, sans-serif', fontWeight: 700, fontSize: 22, color: '#e0e4f0', letterSpacing: '-0.02em' }}>
-          Rust Programming
-        </div>
-        <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#8891ad', marginTop: 4 }}>
-          8 modules · Custom syllabus
-        </div>
-      </div>
+    <div style={{ position: 'relative', width: 360, flexShrink: 0 }}>
+      {/* Ghost card peeking out from behind for a stacked-deck effect */}
+      <motion.div
+        initial={{ opacity: 0, rotate: 8, x: 70, y: 10 }}
+        animate={{ opacity: 1, rotate: 6, x: 22, y: 14 }}
+        transition={{ duration: 0.9, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        style={{
+          position: 'absolute', inset: 0,
+          background: '#0a0e11',
+          border: '1px solid #1c2326',
+          borderRadius: 20,
+          zIndex: 0,
+        }}
+      />
 
-      {/* Divider */}
-      <div style={{ height: 1, background: '#2e3350', marginBottom: 16 }} />
-
-      {/* Module rows */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {modules.map((m, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.9 + i * 0.1, duration: 0.4, ease: 'easeOut' }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 12,
-              padding: '10px 12px',
-              borderRadius: 8,
-              background: m.done ? 'rgba(122, 162, 247,0.06)' : 'rgba(255,255,255,0.03)',
-              border: `1px solid ${m.done ? 'rgba(122, 162, 247,0.2)' : '#2e3350'}`,
-            }}
-          >
-            {/* YT thumbnail placeholder */}
+      <motion.div
+        initial={{ opacity: 0, rotate: 3, x: 60 }}
+        animate={{ opacity: 1, rotate: -2, x: 0 }}
+        transition={{ duration: 0.9, delay: 0.65, ease: [0.16, 1, 0.3, 1] }}
+        style={{
+          position: 'relative', zIndex: 1,
+          background: '#0a0e11',
+          border: '1px solid #1c2326',
+          borderRadius: 20,
+          padding: '26px',
+          boxShadow: '0 30px 60px -20px rgba(0,0,0,0.6)',
+        }}
+      >
+        {/* Card header */}
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
             <div style={{
-              width: 44,
-              height: 30,
-              borderRadius: 8,
-              background: 'rgba(122, 162, 247,0.08)',
-              border: '1px solid rgba(122, 162, 247,0.15)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              background: 'rgba(134, 196, 187,0.12)',
+              border: '1px solid rgba(134, 196, 187,0.25)',
+              borderRadius: 999,
+              padding: '4px 10px',
+              fontSize: 10,
+              fontFamily: 'JetBrains Mono, monospace',
+              color: '#86c4bb',
+              letterSpacing: '0.06em',
             }}>
-              <IcoYT />
+              ★ AI GENERATED
             </div>
-
-            {/* Title + duration */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{
-                fontFamily: 'Inter, sans-serif',
-                fontSize: 12,
-                fontWeight: 500,
-                color: m.done ? '#8891ad' : '#e0e4f0',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                textDecoration: m.done ? 'line-through' : 'none',
-              }}>
-                {m.title}
-              </div>
-              <div style={{
-                fontFamily: 'inherit',
-                fontSize: 10,
-                color: '#6b6860',
-                marginTop: 2,
-              }}>
-                {m.dur}
-              </div>
+            <div style={{
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid #1c2326',
+              borderRadius: 999,
+              padding: '4px 10px',
+              fontSize: 10,
+              fontFamily: 'JetBrains Mono, monospace',
+              color: '#9298ad',
+              letterSpacing: '0.04em',
+            }}>
+              6 weeks · 24 lessons
             </div>
+          </div>
+          <div style={{ fontFamily: 'Newsreader, serif', fontWeight: 500, fontSize: 24, color: '#f2f3f9' }}>
+            React, from zero
+          </div>
+          <div style={{ fontFamily: 'Hanken Grotesk, sans-serif', fontSize: 12, color: '#9298ad', marginTop: 4 }}>
+            Beginner · 5 hrs / week · tuned to you
+          </div>
+        </div>
 
-            {/* Completion chip */}
-            {m.done ? (
-              <div style={{
-                width: 20,
-                height: 20,
-                borderRadius: 8,
-                background: 'rgba(122, 162, 247,0.2)',
-                border: '1px solid rgba(122, 162, 247,0.4)',
+        <div style={{ height: 1, background: '#1c2326', marginBottom: 14 }} />
+
+        {/* Module rows */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {modules.map((m, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.95 + i * 0.1, duration: 0.4, ease: 'easeOut' }}
+              style={{
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                color: '#7aa2f7',
-                flexShrink: 0,
-              }}>
-                <IcoCheck />
-              </div>
-            ) : (
+                gap: 12,
+                padding: '10px 12px',
+                borderRadius: 12,
+                background: m.state === 'active' ? 'rgba(134, 196, 187,0.1)' : 'transparent',
+                border: `1px solid ${m.state === 'active' ? 'rgba(134, 196, 187,0.35)' : 'transparent'}`,
+              }}
+            >
               <div style={{
-                fontFamily: 'inherit',
+                width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: m.state === 'done' ? 'rgba(134, 196, 187,0.18)' : 'transparent',
+                border: `1px solid ${m.state === 'done' ? 'rgba(134, 196, 187,0.4)' : m.state === 'active' ? 'rgba(134, 196, 187,0.5)' : '#2c3538'}`,
+                color: m.state === 'locked' ? '#71768a' : '#86c4bb',
+                fontFamily: 'JetBrains Mono, monospace',
                 fontSize: 10,
-                color: '#6b6860',
-                flexShrink: 0,
               }}>
-                {i === 1 ? '▶' : '○'}
+                {m.state === 'done' ? <IcoCheck /> : m.state === 'active' ? <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#86c4bb', display: 'block' }} /> : m.num}
               </div>
-            )}
-          </motion.div>
-        ))}
-      </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{
+                  fontFamily: 'Hanken Grotesk, sans-serif',
+                  fontSize: 12.5,
+                  fontWeight: 500,
+                  color: m.state === 'locked' ? '#71768a' : '#f2f3f9',
+                }}>
+                  {m.title}
+                </div>
+                <div style={{ fontFamily: 'inherit', fontSize: 10, color: '#71768a', marginTop: 1 }}>{m.meta}</div>
+              </div>
+              {m.state === 'active' && (
+                <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: '#86c4bb', flexShrink: 0 }}>{m.pct}%</span>
+              )}
+            </motion.div>
+          ))}
+        </div>
 
-      <div style={{ marginTop: 18 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-          <span style={{ fontFamily: 'inherit', fontSize: 10, color: '#6b6860' }}>Progress</span>
-          <span style={{ fontFamily: 'inherit', fontSize: 10, color: '#7aa2f7' }}>12%</span>
+        <div style={{ height: 1, background: '#1c2326', margin: '14px 0' }} />
+
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          background: 'rgba(255,255,255,0.03)',
+          border: '1px solid #1c2326',
+          borderRadius: 999,
+          padding: '9px 14px',
+        }}>
+          <span style={{ fontFamily: 'Hanken Grotesk, sans-serif', fontSize: 11.5, color: '#71768a', flex: 1 }}>Ask the tutor about useEffect…</span>
+          <span style={{ color: '#86c4bb' }}><IcoArrow /></span>
         </div>
-        <div style={{ height: 3, background: '#2a2f42', borderRadius: 8 }}>
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: '12%' }}
-            transition={{ delay: 1.4, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            style={{ height: '100%', background: '#7aa2f7', borderRadius: 8 }}
-          />
-        </div>
-      </div>
-    </motion.div>
+      </motion.div>
+    </div>
   )
 }
 
@@ -247,7 +214,7 @@ function ConnectingLine({ inView }) {
       <svg width="100%" height="2" style={{ overflow: 'visible' }}>
         <motion.line
           x1="0%" y1="1" x2="100%" y2="1"
-          stroke="#2e3350"
+          stroke="#1c2326"
           strokeWidth="1.5"
           strokeDasharray="4 4"
           initial={{ pathLength: 0, opacity: 0 }}
@@ -288,7 +255,7 @@ function HowItWorks() {
         <div style={{
           fontFamily: 'inherit',
           fontSize: 11,
-          color: '#7aa2f7',
+          color: '#86c4bb',
           letterSpacing: '0.04em',
           fontVariant: 'all-small-caps',
           marginBottom: 16,
@@ -296,11 +263,11 @@ function HowItWorks() {
           How it works
         </div>
         <h2 style={{
-          fontFamily: 'Inter, sans-serif',
+          fontFamily: 'Newsreader, serif',
           fontSize: 'clamp(32px, 5vw, 48px)',
-          fontWeight: 700,
-          color: '#e0e4f0',
-          letterSpacing: '-0.03em',
+          fontWeight: 500,
+          color: '#f2f3f9',
+          letterSpacing: '-0.01em',
           margin: 0,
         }}>
           Three steps to your first path.
@@ -315,8 +282,8 @@ function HowItWorks() {
               animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 32 }}
               transition={{ duration: 0.5, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
               style={{
-                background: '#1e2030',
-                border: '1px solid #2e3350',
+                background: '#0a0e11',
+                border: '1px solid #1c2326',
                 borderRadius: 8,
                 padding: '28px 24px',
                 flex: 1,
@@ -324,10 +291,10 @@ function HowItWorks() {
               }}
             >
               <div style={{
-                fontFamily: 'Inter, sans-serif',
+                fontFamily: 'Hanken Grotesk, sans-serif',
                 fontSize: 56,
                 fontWeight: 800,
-                color: '#2e3350',
+                color: '#1c2326',
                 lineHeight: 1,
                 marginBottom: 16,
                 letterSpacing: '-0.04em',
@@ -335,19 +302,19 @@ function HowItWorks() {
                 {step.num}
               </div>
               <div style={{
-                fontFamily: 'Inter, sans-serif',
+                fontFamily: 'Hanken Grotesk, sans-serif',
                 fontSize: 16,
                 fontWeight: 600,
-                color: '#e0e4f0',
+                color: '#f2f3f9',
                 marginBottom: 10,
                 letterSpacing: '-0.01em',
               }}>
                 {step.label}
               </div>
               <div style={{
-                fontFamily: 'Inter, sans-serif',
+                fontFamily: 'Hanken Grotesk, sans-serif',
                 fontSize: 13,
-                color: '#8891ad',
+                color: '#9298ad',
                 lineHeight: 1.65,
               }}>
                 {step.desc}
@@ -397,7 +364,7 @@ function FeatureGrid() {
         <div style={{
           fontFamily: 'inherit',
           fontSize: 11,
-          color: '#7aa2f7',
+          color: '#86c4bb',
           letterSpacing: '0.04em',
           fontVariant: 'all-small-caps',
           marginBottom: 16,
@@ -405,11 +372,11 @@ function FeatureGrid() {
           Features
         </div>
         <h2 style={{
-          fontFamily: 'Inter, sans-serif',
+          fontFamily: 'Newsreader, serif',
           fontSize: 'clamp(32px, 5vw, 48px)',
-          fontWeight: 700,
-          color: '#e0e4f0',
-          letterSpacing: '-0.03em',
+          fontWeight: 500,
+          color: '#f2f3f9',
+          letterSpacing: '-0.01em',
           margin: 0,
         }}>
           Everything you need to go deep.
@@ -429,42 +396,42 @@ function FeatureGrid() {
             viewport={{ once: true, margin: '-40px' }}
             transition={{ duration: 0.5, delay: i * 0.06, ease: [0.16, 1, 0.3, 1] }}
             style={{
-              background: '#1e2030',
-              border: '1px solid #2e3350',
+              background: '#0a0e11',
+              border: '1px solid #1c2326',
               borderRadius: 8,
               padding: '32px',
               transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
             }}
-            whileHover={{ borderColor: '#3d3b36' }}
+            whileHover={{ borderColor: '#2c3538' }}
           >
             <div style={{
               width: 44,
               height: 44,
               borderRadius: 8,
-              background: 'rgba(122, 162, 247,0.08)',
-              border: '1px solid rgba(122, 162, 247,0.15)',
+              background: 'rgba(134, 196, 187,0.08)',
+              border: '1px solid rgba(134, 196, 187,0.15)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#7aa2f7',
+              color: '#86c4bb',
               marginBottom: 20,
             }}>
               {f.icon}
             </div>
             <div style={{
-              fontFamily: 'Inter, sans-serif',
+              fontFamily: 'Hanken Grotesk, sans-serif',
               fontSize: 17,
               fontWeight: 600,
-              color: '#e0e4f0',
+              color: '#f2f3f9',
               letterSpacing: '-0.01em',
               marginBottom: 10,
             }}>
               {f.name}
             </div>
             <div style={{
-              fontFamily: 'Inter, sans-serif',
+              fontFamily: 'Hanken Grotesk, sans-serif',
               fontSize: 13,
-              color: '#8891ad',
+              color: '#9298ad',
               lineHeight: 1.65,
             }}>
               {f.desc}
@@ -490,7 +457,7 @@ function CommunitySection() {
         <div style={{
           fontFamily: 'inherit',
           fontSize: 11,
-          color: '#7aa2f7',
+          color: '#86c4bb',
           letterSpacing: '0.04em',
           fontVariant: 'all-small-caps',
           marginBottom: 16,
@@ -498,11 +465,11 @@ function CommunitySection() {
           Community
         </div>
         <h2 style={{
-          fontFamily: 'Inter, sans-serif',
+          fontFamily: 'Newsreader, serif',
           fontSize: 'clamp(32px, 5vw, 48px)',
-          fontWeight: 700,
-          color: '#e0e4f0',
-          letterSpacing: '-0.03em',
+          fontWeight: 500,
+          color: '#f2f3f9',
+          letterSpacing: '-0.01em',
           margin: 0,
         }}>
           Paths shared by the community.
@@ -518,21 +485,21 @@ function CommunitySection() {
             viewport={{ once: true, margin: '-40px' }}
             transition={{ duration: 0.5, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
             style={{
-              background: '#1e2030',
-              border: '1px solid #2e3350',
-              borderLeft: '1px solid #7aa2f7',
+              background: '#0a0e11',
+              border: '1px solid #1c2326',
+              borderLeft: '1px solid #86c4bb',
               borderRadius: 8,
               padding: '28px 24px',
               cursor: 'pointer',
               transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
             }}
-            whileHover={{ borderLeftColor: '#d4b96a' }}
+            whileHover={{ borderLeftColor: '#9fcebe' }}
           >
             <div style={{
-              fontFamily: 'Inter, sans-serif',
+              fontFamily: 'Hanken Grotesk, sans-serif',
               fontSize: 18,
               fontWeight: 700,
-              color: '#e0e4f0',
+              color: '#f2f3f9',
               letterSpacing: '-0.02em',
               marginBottom: 8,
               lineHeight: 1.3,
@@ -542,31 +509,31 @@ function CommunitySection() {
             <div style={{
               fontFamily: 'inherit',
               fontSize: 11,
-              color: '#7aa2f7',
+              color: '#86c4bb',
               marginBottom: 20,
             }}>
               {p.user}
             </div>
             <div style={{ display: 'flex', gap: 16 }}>
               <div style={{
-                fontFamily: 'Inter, sans-serif',
+                fontFamily: 'Hanken Grotesk, sans-serif',
                 fontSize: 12,
-                color: '#8891ad',
+                color: '#9298ad',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 5,
               }}>
-                <span style={{ color: '#6b6860' }}>◈</span> {p.modules} modules
+                <span style={{ color: '#71768a' }}>◈</span> {p.modules} modules
               </div>
               <div style={{
-                fontFamily: 'Inter, sans-serif',
+                fontFamily: 'Hanken Grotesk, sans-serif',
                 fontSize: 12,
-                color: '#8891ad',
+                color: '#9298ad',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 5,
               }}>
-                <span style={{ color: '#6b6860' }}>◷</span> {p.time}
+                <span style={{ color: '#71768a' }}>◷</span> {p.time}
               </div>
             </div>
           </motion.div>
@@ -580,8 +547,8 @@ function CommunitySection() {
 function FooterCTA({ onGetStarted }) {
   return (
     <section style={{
-      background: '#1e2030',
-      borderTop: '1px solid #2e3350',
+      background: '#0a0e11',
+      borderTop: '1px solid #1c2326',
       padding: '120px 32px',
       textAlign: 'center',
     }}>
@@ -593,28 +560,28 @@ function FooterCTA({ onGetStarted }) {
         style={{ maxWidth: 600, margin: '0 auto' }}
       >
         <h2 style={{
-          fontFamily: 'Inter, sans-serif',
+          fontFamily: 'Newsreader, serif',
           fontSize: 'clamp(36px, 6vw, 64px)',
-          fontWeight: 800,
-          color: '#e0e4f0',
-          letterSpacing: '-0.04em',
+          fontWeight: 500,
+          color: '#f2f3f9',
+          letterSpacing: '-0.01em',
           lineHeight: 1.1,
           marginBottom: 40,
         }}>
-          Start your first path free.
+          Start your <em style={{ color: '#86c4bb' }}>first path</em> free.
         </h2>
         <button
           onClick={onGetStarted}
           id="footer-cta-btn"
           style={{
-            background: '#7aa2f7',
-            color: '#13141c',
-            fontFamily: 'Inter, sans-serif',
+            background: '#86c4bb',
+            color: '#04050a',
+            fontFamily: 'Hanken Grotesk, sans-serif',
             fontWeight: 700,
             fontSize: 16,
             letterSpacing: '-0.01em',
             border: 'none',
-            borderRadius: 8,
+            borderRadius: 999,
             padding: '16px 40px',
             cursor: 'pointer',
             transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
@@ -622,8 +589,8 @@ function FooterCTA({ onGetStarted }) {
             alignItems: 'center',
             gap: 8,
           }}
-          onMouseEnter={e => { e.target.style.background = '#d4b96a' }}
-          onMouseLeave={e => { e.target.style.background = '#7aa2f7' }}
+          onMouseEnter={e => { e.target.style.background = '#9fcebe' }}
+          onMouseLeave={e => { e.target.style.background = '#86c4bb' }}
         >
           Generate My Path <IcoArrow />
         </button>
@@ -647,16 +614,16 @@ function LandingNav({ onGetStarted }) {
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '18px 32px',
-        background: '#1e2030',
-        borderBottom: '1px solid #2e3350',
+        background: '#0a0e11',
+        borderBottom: '1px solid #1c2326',
       }}
     >
       {/* Logo */}
       <div style={{
-        fontFamily: 'Inter, sans-serif',
+        fontFamily: 'Hanken Grotesk, sans-serif',
         fontWeight: 800,
         fontSize: 20,
-        color: '#e0e4f0',
+        color: '#f2f3f9',
         letterSpacing: '-0.03em',
         display: 'flex',
         alignItems: 'center',
@@ -667,9 +634,9 @@ function LandingNav({ onGetStarted }) {
           width: 28,
           height: 28,
           borderRadius: 8,
-          background: '#7aa2f7',
-          color: '#13141c',
-          fontFamily: 'Inter, sans-serif',
+          background: '#86c4bb',
+          color: '#04050a',
+          fontFamily: 'Hanken Grotesk, sans-serif',
           fontWeight: 800,
           fontSize: 16,
           textAlign: 'center',
@@ -678,22 +645,44 @@ function LandingNav({ onGetStarted }) {
         OpenPath
       </div>
 
+      {/* Center links */}
+      <div className="landing-nav-links" style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
+        {['How it works', 'Features', 'Community'].map(label => (
+          <a
+            key={label}
+            href="#"
+            onClick={e => e.preventDefault()}
+            style={{
+              fontFamily: 'Hanken Grotesk, sans-serif',
+              fontSize: 14,
+              color: '#9298ad',
+              textDecoration: 'none',
+              transition: 'color 0.2s ease',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#f2f3f9' }}
+            onMouseLeave={e => { e.currentTarget.style.color = '#9298ad' }}
+          >
+            {label}
+          </a>
+        ))}
+      </div>
+
       {/* Right side */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
         <button
           onClick={onGetStarted}
           style={{
             background: 'transparent',
-            color: '#8891ad',
+            color: '#9298ad',
             border: 'none',
-            fontFamily: 'Inter, sans-serif',
+            fontFamily: 'Hanken Grotesk, sans-serif',
             fontSize: 14,
             cursor: 'pointer',
             padding: '8px 16px',
             transition: 'color 0.2s ease',
           }}
-          onMouseEnter={e => { e.target.style.color = '#e0e4f0' }}
-          onMouseLeave={e => { e.target.style.color = '#8891ad' }}
+          onMouseEnter={e => { e.target.style.color = '#f2f3f9' }}
+          onMouseLeave={e => { e.target.style.color = '#9298ad' }}
         >
           Sign in
         </button>
@@ -701,19 +690,19 @@ function LandingNav({ onGetStarted }) {
           onClick={onGetStarted}
           id="nav-cta-btn"
           style={{
-            background: '#7aa2f7',
-            color: '#13141c',
+            background: '#86c4bb',
+            color: '#04050a',
             border: 'none',
-            borderRadius: 8,
-            fontFamily: 'Inter, sans-serif',
+            borderRadius: 999,
+            fontFamily: 'Hanken Grotesk, sans-serif',
             fontWeight: 600,
             fontSize: 14,
             padding: '9px 22px',
             cursor: 'pointer',
             transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
           }}
-          onMouseEnter={e => { e.target.style.background = '#d4b96a' }}
-          onMouseLeave={e => { e.target.style.background = '#7aa2f7' }}
+          onMouseEnter={e => { e.target.style.background = '#9fcebe' }}
+          onMouseLeave={e => { e.target.style.background = '#86c4bb' }}
         >
           Get started free
         </button>
@@ -723,175 +712,24 @@ function LandingNav({ onGetStarted }) {
 }
 
 // ─── HERO SECTION ─────────────────────────────────────────────────────────────
-const HEADLINE_WORDS_1 = ['Learn', 'anything.']
-const HEADLINE_WORDS_2 = ['Follow', 'the', 'path.']
-
-function Hero({ onGetStarted }) {
-  return (
-    <section style={{
-      position: 'relative',
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      paddingTop: 96,
-      paddingBottom: 80,
-      overflow: 'hidden',
-      maxWidth: 1200,
-      margin: '0 auto',
-      padding: '160px 32px 80px',
-    }}>
-      {/* Left: text + CTA */}
-      <div style={{ flex: 1, minWidth: 0, paddingRight: 48 }}>
-        {/* Eyebrow */}
-        <motion.div
-          {...fadeUp(0.1)}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 8,
-            background: 'rgba(122, 162, 247,0.08)',
-            border: '1px solid rgba(122, 162, 247,0.2)',
-            borderRadius: 8,
-            padding: '6px 16px 6px 10px',
-            marginBottom: 40,
-          }}
-        >
-          <span style={{
-            fontFamily: 'inherit',
-            fontSize: 12,
-            color: '#8891ad',
-            fontVariant: 'all-small-caps',
-            letterSpacing: '0.06em',
-          }}>
-            Free and open source
-          </span>
-        </motion.div>
-
-        {/* Headline line 1 */}
-        <h1 style={{
-          fontFamily: 'Inter, sans-serif',
-          fontWeight: 800,
-          fontSize: 'clamp(52px, 7vw, 88px)',
-          letterSpacing: '-0.04em',
-          lineHeight: 1.0,
-          color: '#e0e4f0',
-          margin: 0,
-        }}>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0 14px', marginBottom: 4 }}>
-            {HEADLINE_WORDS_1.map((word, i) => (
-              <motion.span
-                key={word}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 + i * 0.08, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                style={{ display: 'inline-block' }}
-              >
-                {word}
-              </motion.span>
-            ))}
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0 14px' }}>
-            {HEADLINE_WORDS_2.map((word, i) => (
-              <motion.span
-                key={word}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.36 + i * 0.08, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                style={{
-                  display: 'inline-block',
-                  color: word === 'the' || word === 'path.' ? '#7aa2f7' : '#e0e4f0',
-                }}
-              >
-                {word}
-              </motion.span>
-            ))}
-          </div>
-        </h1>
-
-        {/* Sub-headline */}
-        <motion.p
-          {...fadeUp(0.65)}
-          style={{
-            fontFamily: 'Inter, sans-serif',
-            fontSize: 'clamp(15px, 2vw, 18px)',
-            color: '#8891ad',
-            lineHeight: 1.7,
-            maxWidth: 480,
-            margin: '28px 0 44px',
-          }}
-        >
-          OpenPath uses AI to build you a structured, video-backed learning track
-          for any skill — in minutes.
-        </motion.p>
-
-        {/* CTA */}
-        <motion.div {...fadeUp(0.78)} style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-          <button
-            onClick={onGetStarted}
-            id="hero-cta-btn"
-            style={{
-              background: '#7aa2f7',
-              color: '#13141c',
-              border: 'none',
-              borderRadius: 8,
-              fontFamily: 'Inter, sans-serif',
-              fontWeight: 700,
-              fontSize: 16,
-              letterSpacing: '-0.01em',
-              padding: '16px 36px',
-              cursor: 'pointer',
-              transition: 'all 0.25s ease',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = '#d4b96a' }}
-            onMouseLeave={e => { e.currentTarget.style.background = '#7aa2f7' }}
-          >
-            Generate my path <IcoArrow />
-          </button>
-          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#6b6860' }}>
-            Free to start · No card required
-          </span>
-        </motion.div>
-      </div>
-
-      {/* Right: card mockup */}
-      <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
-        <HeroCard />
-      </div>
-    </section>
-  )
-}
-
-// ─── NOISE OVERLAY ────────────────────────────────────────────────────────────
-function NoiseHero() {
-  return (
-    <div style={{
-      position: 'absolute',
-      inset: 0,
-      backgroundImage: NOISE_SVG,
-      backgroundRepeat: 'repeat',
-      backgroundSize: '200px 200px',
-      pointerEvents: 'none',
-      zIndex: 0,
-    }} />
-  )
-}
+const HEADLINE_WORDS_1 = ['Skip', 'the', 'rabbit', 'holes.']
+const HEADLINE_WORDS_2 = ['Follow', 'one', 'clear', 'path.']
 
 // ─── MAIN LANDING PAGE ────────────────────────────────────────────────────────
 export default function LandingPage({ onGetStarted }) {
   return (
     <div style={{
+      position: 'relative',
       minHeight: '100vh',
-      background: '#13141c',
-      color: '#e0e4f0',
+      background: '#04050a',
+      color: '#f2f3f9',
       overflowX: 'hidden',
     }}>
       <style>{`
         @media (max-width: 768px) {
           .landing-hero-flex { flex-direction: column !important; }
           .landing-hero-card { display: none !important; }
+          .landing-nav-links { display: none !important; }
           .landing-feature-grid { grid-template-columns: 1fr !important; }
           .landing-community-grid { grid-template-columns: 1fr !important; }
           .landing-steps-flex { flex-direction: column !important; gap: 16px !important; }
@@ -899,6 +737,7 @@ export default function LandingPage({ onGetStarted }) {
         }
       `}</style>
 
+      <DotGrid />
       <LandingNav onGetStarted={onGetStarted} />
 
       <div style={{ position: 'relative' }}>
@@ -921,107 +760,159 @@ export default function LandingPage({ onGetStarted }) {
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 8,
-                  background: 'rgba(122, 162, 247,0.08)',
-                  border: '1px solid rgba(122, 162, 247,0.2)',
-                  borderRadius: 8,
-                  padding: '6px 16px 6px 10px',
+                  background: 'rgba(134, 196, 187,0.08)',
+                  border: '1px solid rgba(134, 196, 187,0.2)',
+                  borderRadius: 999,
+                  padding: '6px 16px 6px 12px',
                   marginBottom: 40,
                 }}
               >
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#86c4bb', display: 'inline-block' }} />
                 <span style={{
-                  fontFamily: 'inherit',
-                  fontSize: 12,
-                  color: '#8891ad',
-                  fontVariant: 'all-small-caps',
-                  letterSpacing: '0.06em',
+                  fontFamily: 'JetBrains Mono, monospace',
+                  fontSize: 11,
+                  color: '#9298ad',
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
                 }}>
-                  Free and open source
+                  A curriculum built for you
                 </span>
               </motion.div>
 
               <h1 style={{
-                fontFamily: 'Inter, sans-serif',
-                fontWeight: 800,
-                fontSize: 'clamp(52px, 6.5vw, 88px)',
-                letterSpacing: '-0.04em',
-                lineHeight: 1.0,
-                color: '#e0e4f0',
+                fontFamily: 'Newsreader, serif',
+                fontWeight: 400,
+                fontSize: 'clamp(46px, 6vw, 76px)',
+                letterSpacing: '-0.01em',
+                lineHeight: 1.08,
+                color: '#f2f3f9',
                 margin: 0,
               }}>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0 14px', marginBottom: 4 }}>
-                  {HEADLINE_WORDS_1.map((word, i) => (
-                    <motion.span
-                      key={word + i}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2 + i * 0.08, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                      style={{ display: 'inline-block' }}
-                    >
-                      {word}
-                    </motion.span>
-                  ))}
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0 14px' }}>
-                  {HEADLINE_WORDS_2.map((word, i) => (
-                    <motion.span
-                      key={word + i}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.36 + i * 0.08, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                      style={{
-                        display: 'inline-block',
-                        color: i > 0 ? '#7aa2f7' : '#e0e4f0',
-                      }}
-                    >
-                      {word}
-                    </motion.span>
-                  ))}
-                </div>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  {HEADLINE_WORDS_1.join(' ')}
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.36, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  style={{ fontStyle: 'italic', color: '#86c4bb' }}
+                >
+                  {HEADLINE_WORDS_2.join(' ')}
+                </motion.div>
               </h1>
 
               <motion.p
                 {...fadeUp(0.65)}
                 style={{
-                  fontFamily: 'Inter, sans-serif',
+                  fontFamily: 'Hanken Grotesk, sans-serif',
                   fontSize: 'clamp(15px, 1.8vw, 18px)',
-                  color: '#8891ad',
+                  color: '#9298ad',
                   lineHeight: 1.7,
                   maxWidth: 480,
                   margin: '28px 0 44px',
                 }}
               >
-                OpenPath uses AI to build you a structured, video-backed learning track
-                for any skill — in minutes.
+                Tell OpenPath the skill, your level, and the hours you can spare.
+                It builds a structured, video-backed syllabus — and a tutor that
+                knows every lesson by heart.
               </motion.p>
 
-              <motion.div {...fadeUp(0.78)} style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+              <motion.div {...fadeUp(0.78)} style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
                 <button
                   onClick={onGetStarted}
                   id="hero-cta-btn"
                   style={{
-                    background: '#7aa2f7',
-                    color: '#13141c',
+                    background: '#86c4bb',
+                    color: '#04050a',
                     border: 'none',
-                    borderRadius: 8,
-                    fontFamily: 'Inter, sans-serif',
+                    borderRadius: 999,
+                    fontFamily: 'Hanken Grotesk, sans-serif',
                     fontWeight: 700,
-                    fontSize: 16,
+                    fontSize: 15,
                     letterSpacing: '-0.01em',
-                    padding: '16px 36px',
+                    padding: '14px 28px',
                     cursor: 'pointer',
                     transition: 'all 0.25s ease',
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: 8,
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.background = '#d4b96a' }}
-                  onMouseLeave={e => { e.currentTarget.style.background = '#7aa2f7' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = '#9fcebe' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = '#86c4bb' }}
                 >
-                  Generate my path →
+                  Build my path — free <IcoArrow />
                 </button>
-                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#6b6860' }}>
-                  Free to start · No card required
+                <button
+                  onClick={onGetStarted}
+                  style={{
+                    background: 'transparent',
+                    color: '#f2f3f9',
+                    border: '1px solid #1c2326',
+                    borderRadius: 999,
+                    fontFamily: 'Hanken Grotesk, sans-serif',
+                    fontWeight: 600,
+                    fontSize: 15,
+                    padding: '14px 24px',
+                    cursor: 'pointer',
+                    transition: 'all 0.25s ease',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = '#2c3538' }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#1c2326' }}
+                >
+                  <span style={{ fontSize: 11 }}>▶</span> Watch the 2-min demo
+                </button>
+              </motion.div>
+
+              <motion.div {...fadeUp(0.85)} style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 32 }}>
+                <div style={{ display: 'flex' }}>
+                  {['M', 'A', 'J'].map((letter, i) => (
+                    <div key={letter} style={{
+                      width: 28, height: 28, borderRadius: '50%',
+                      background: 'linear-gradient(135deg, rgba(134,196,187,0.35), rgba(134,196,187,0.12))',
+                      border: '2px solid #04050a',
+                      marginLeft: i === 0 ? 0 : -8,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontFamily: 'Hanken Grotesk, sans-serif', fontSize: 11, fontWeight: 700, color: '#d3e6dc',
+                    }}>
+                      {letter}
+                    </div>
+                  ))}
+                  <div style={{
+                    width: 28, height: 28, borderRadius: '50%',
+                    background: '#10151a', border: '2px solid #04050a', marginLeft: -8,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontFamily: 'Hanken Grotesk, sans-serif', fontSize: 11, fontWeight: 700, color: '#9298ad',
+                  }}>
+                    +
+                  </div>
+                </div>
+                <span style={{ fontFamily: 'Hanken Grotesk, sans-serif', fontSize: 13, color: '#9298ad' }}>
+                  Built for learners on a path made just for them
                 </span>
+              </motion.div>
+
+              {/* Mini feature strip */}
+              <motion.div
+                {...fadeUp(0.9)}
+                style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginTop: 56, maxWidth: 560 }}
+              >
+                {[
+                  { title: 'AI Syllabus', desc: 'A modular path shaped to your exact level and pace — reshuffled as you go.' },
+                  { title: 'Quiz to Skip', desc: 'Already know it? Prove it in a short assessment and jump straight ahead.' },
+                  { title: 'Grounded Tutor', desc: "Ask anything; every answer cites the exact moment in the lesson transcript." },
+                ].map(f => (
+                  <div key={f.title} style={{ background: '#0a0e11', border: '1px solid #1c2326', borderRadius: 12, padding: '16px 14px' }}>
+                    <div style={{ fontFamily: 'Hanken Grotesk, sans-serif', fontWeight: 600, fontSize: 13, color: '#f2f3f9', marginBottom: 6 }}>{f.title}</div>
+                    <div style={{ fontFamily: 'Hanken Grotesk, sans-serif', fontSize: 12, color: '#71768a', lineHeight: 1.5 }}>{f.desc}</div>
+                  </div>
+                ))}
               </motion.div>
             </div>
 
@@ -1037,25 +928,25 @@ export default function LandingPage({ onGetStarted }) {
           position: 'absolute',
           bottom: 0, left: 0, right: 0,
           height: 120,
-          background: '#13141c',
+          background: '#04050a',
           pointerEvents: 'none',
         }} />
       </div>
 
       {/* Divider line */}
-      <div style={{ height: 1, background: '#2e3350', maxWidth: 1200, margin: '0 auto 0', marginLeft: 32, marginRight: 32 }} />
+      <div style={{ height: 1, background: '#1c2326', maxWidth: 1200, margin: '0 auto 0', marginLeft: 32, marginRight: 32 }} />
 
       {/* How It Works */}
       <HowItWorks />
 
       {/* Divider */}
-      <div style={{ height: 1, background: '#2e3350', maxWidth: 1200, margin: '0 32px' }} />
+      <div style={{ height: 1, background: '#1c2326', maxWidth: 1200, margin: '0 32px' }} />
 
       {/* Feature Grid */}
       <FeatureGrid />
 
       {/* Divider */}
-      <div style={{ height: 1, background: '#2e3350', maxWidth: 1200, margin: '0 32px' }} />
+      <div style={{ height: 1, background: '#1c2326', maxWidth: 1200, margin: '0 32px' }} />
 
       {/* Community */}
       <CommunitySection />

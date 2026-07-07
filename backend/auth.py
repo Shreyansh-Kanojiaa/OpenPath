@@ -1,4 +1,5 @@
 import os
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -12,7 +13,23 @@ import models
 import database
 
 # ── Config ────────────────────────────────────────────────────────────────────
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "changeme_super_secret_openpath_key_2026")
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+_env_secret = os.getenv("JWT_SECRET_KEY")
+
+if not _env_secret:
+    if ENVIRONMENT == "production":
+        raise RuntimeError(
+            "JWT_SECRET_KEY must be set in production. "
+            'Generate one: python -c "import secrets; print(secrets.token_hex(32))"'
+        )
+    _env_secret = secrets.token_hex(32)
+    print(
+        "[auth] WARNING: JWT_SECRET_KEY not set — using an ephemeral dev-only key "
+        "(existing tokens will be invalidated on restart). Set JWT_SECRET_KEY in .env "
+        "for a persistent dev session."
+    )
+
+SECRET_KEY = _env_secret
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))  # 24h
 

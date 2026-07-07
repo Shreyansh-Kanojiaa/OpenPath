@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Download, Loader2, FileText } from 'lucide-react';
 
-const API = 'http://localhost:8000';
+const API = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8000`;
 
 export function OfflineNotesButton({ moduleId, token, moduleTitle }) {
   const [isLoading, setIsLoading] = useState(false);

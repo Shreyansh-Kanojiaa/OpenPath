@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import ForceGraph2D from 'react-force-graph-2d';
 import { Briefcase, Target, Map, Clock, CheckCircle2, ChevronRight, Loader2 } from 'lucide-react';
 
-const API = `http://${window.location.hostname}:8000`;
+const API = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8000`;
 
 function SkillGraph({ token }) {
   const [data, setData] = useState({ nodes: [], links: [] });
@@ -40,17 +40,17 @@ function SkillGraph({ token }) {
   }
 
   return (
-    <div className="h-[500px] w-full rounded-[2px] overflow-hidden border border-white/5 bg-black/30 relative">
-      <div className="absolute top-4 left-4 z-10 bg-black/50 p-3 rounded-[2px] backdrop-blur border border-white/5 text-xs text-slate-300">
-        <h4 className="font-bold text-white mb-2 uppercase tracking-wider font-display">Skill Graph</h4>
-        <div className="flex items-center gap-2 mb-1"><div className="w-3 h-3 rounded-[2px] bg-mastered shadow-[0_0_8px_rgba(201,169,110,0.4)]" /> Mastered</div>
-        <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-[2px] bg-slate-600" /> Pending</div>
+    <div className="h-[500px] w-full rounded-2xl overflow-hidden border border-white/5 bg-black/30 relative">
+      <div className="absolute top-4 left-4 z-10 bg-black/50 p-3 rounded-2xl backdrop-blur border border-white/5 text-xs text-slate-300">
+        <h4 className="font-bold text-white mb-2 uppercase tracking-wider text-xs">Skill Graph</h4>
+        <div className="flex items-center gap-2 mb-1"><div className="w-3 h-3 rounded-2xl bg-mastered shadow-[0_0_8px_rgba(134,196,187,0.4)]" /> Mastered</div>
+        <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-2xl bg-slate-600" /> Pending</div>
       </div>
       <ForceGraph2D
         ref={graphRef}
         graphData={data}
         nodeLabel="name"
-        nodeColor={node => node.completed ? '#c9a96e' : '#475569'}
+        nodeColor={node => node.completed ? '#86c4bb' : '#475569'}
         nodeVal={node => node.completed ? 6 * pulse : 6}
         nodeRelSize={1}
         linkColor={() => 'rgba(255,255,255,0.1)'}
@@ -103,7 +103,7 @@ export function CareerHub({ token, onGenerateClick }) {
           <div className="glass-card p-10 relative overflow-hidden">
             <div className="absolute top-[-20%] right-[-10%] w-[400px] h-[400px] bg-blue/5 blur-[100px] rounded-full pointer-events-none" />
             
-            <h3 className="text-2xl font-bold font-display mb-6 flex items-center gap-3">
+            <h3 className="text-2xl font-bold mb-6 flex items-center gap-3">
               <Target className="w-6 h-6 text-blue" /> Job Ready Calculator
             </h3>
             
@@ -143,7 +143,7 @@ export function CareerHub({ token, onGenerateClick }) {
                       <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />
                       <motion.circle
                         cx="50" cy="50" r="45" fill="none"
-                        stroke={result.readiness_percentage >= 80 ? '#c9a96e' : result.readiness_percentage >= 50 ? '#e0af68' : '#f7768e'}
+                        stroke={result.readiness_percentage >= 80 ? '#86c4bb' : result.readiness_percentage >= 50 ? '#e0af68' : '#f7768e'}
                         strokeWidth="8" strokeLinecap="square" strokeDasharray={2 * Math.PI * 45}
                         strokeDashoffset={2 * Math.PI * 45 * (1 - (result.readiness_percentage / 100))}
                         initial={{ strokeDashoffset: 2 * Math.PI * 45 }}
@@ -175,20 +175,20 @@ export function CareerHub({ token, onGenerateClick }) {
                   </div>
                 </div>
 
-                <div className="bg-black/30 rounded-[2px] p-6 border border-white/5">
-                  <h4 className="text-lg font-bold font-display mb-4 flex items-center gap-2"><Map className="w-5 h-5 text-cyan" /> Recommended Roadmap</h4>
+                <div className="bg-black/30 rounded-2xl p-6 border border-white/5">
+                  <h4 className="text-lg font-bold mb-4 flex items-center gap-2"><Map className="w-5 h-5 text-cyan" /> Recommended Roadmap</h4>
                   <div className="space-y-4 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-[1px] before:bg-white/10">
                     {result.roadmap.map((step, i) => (
                       <div key={i} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                        <div className="flex items-center justify-center w-10 h-10 rounded-[2px] border border-black bg-slate-800 text-slate-500 group-hover:bg-cyan group-hover:text-black group-hover:border-cyan shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 transition-colors z-10">
+                        <div className="flex items-center justify-center w-10 h-10 rounded-2xl border border-black bg-slate-800 text-slate-500 group-hover:bg-cyan group-hover:text-black group-hover:border-cyan shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 transition-colors z-10">
                           <span className="text-sm font-bold font-mono">{i + 1}</span>
                         </div>
-                        <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] glass-card p-4 rounded-[2px] shadow flex justify-between items-center gap-4 group-hover:border-cyan/30 transition-colors">
+                        <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] glass-card p-4 rounded-2xl shadow flex justify-between items-center gap-4 group-hover:border-cyan/30 transition-colors">
                           <p className="text-sm text-slate-300 leading-relaxed flex-1">{step}</p>
                           {onGenerateClick && (
                             <button
                               onClick={() => onGenerateClick(step)}
-                              className="shrink-0 px-4 py-2 text-[10px] uppercase tracking-widest font-bold text-black bg-cyan rounded-[2px] hover:scale-105 active:scale-95 transition-all shadow-blue-glow-sm opacity-0 group-hover:opacity-100"
+                              className="shrink-0 px-4 py-2 text-[10px] uppercase tracking-widest font-bold text-black bg-cyan rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-blue-glow-sm opacity-0 group-hover:opacity-100"
                               title="Generate a course for this skill"
                             >
                               Build
@@ -206,7 +206,7 @@ export function CareerHub({ token, onGenerateClick }) {
 
         <div className="lg:col-span-1 space-y-8">
           <div className="glass-card p-6">
-            <h3 className="text-xl font-bold font-display mb-4 flex items-center gap-2">
+            <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
               <Briefcase className="w-5 h-5 text-cyan" /> Your Ecosystem
             </h3>
             <p className="text-xs text-slate-400 mb-6 leading-relaxed">
@@ -215,10 +215,10 @@ export function CareerHub({ token, onGenerateClick }) {
             <SkillGraph token={token} />
           </div>
           
-          <div className="glass-card p-6 bg-blue/5 border-blue/20 rounded-[2px]">
-            <h3 className="text-lg font-bold font-display mb-2 text-white">Verified Badges</h3>
+          <div className="glass-card p-6 bg-blue/5 border-blue/20 rounded-2xl">
+            <h3 className="text-lg font-bold mb-2 text-white">Verified Badges</h3>
             <p className="text-xs text-slate-400 mb-6">Complete paths to unlock verifiable micro-credentials.</p>
-            <div className="flex items-center justify-center h-32 border-2 border-dashed border-white/10 rounded-[2px]">
+            <div className="flex items-center justify-center h-32 border-2 border-dashed border-white/10 rounded-2xl">
               <span className="text-sm text-slate-500 font-mono tracking-widest uppercase">Coming Soon</span>
             </div>
           </div>

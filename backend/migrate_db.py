@@ -19,6 +19,7 @@ MIGRATIONS = {
     "modules": [
         ("has_transcript", "BOOLEAN NOT NULL DEFAULT FALSE"),
         ("notes", "VARCHAR(2000) DEFAULT NULL"),
+        ("completed_at", "TIMESTAMP DEFAULT NULL"),
     ],
 }
 
