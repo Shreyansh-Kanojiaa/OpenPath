@@ -250,7 +250,7 @@ function HowItWorks() {
   const inView = useInView(ref, { once: true, margin: '-80px' })
 
   return (
-    <section style={{ padding: '120px 0', maxWidth: 1200, margin: '0 auto', paddingLeft: 32, paddingRight: 32 }}>
+    <section id="how-it-works" style={{ padding: '120px 0', maxWidth: 1200, margin: '0 auto', paddingLeft: 32, paddingRight: 32, scrollMarginTop: 80 }}>
       <motion.div {...inViewFadeUp(0)} style={{ marginBottom: 64 }}>
         <div style={{
           fontFamily: 'inherit',
@@ -359,7 +359,7 @@ const FEATURES = [
 
 function FeatureGrid() {
   return (
-    <section style={{ padding: '120px 0', maxWidth: 1200, margin: '0 auto', paddingLeft: 32, paddingRight: 32 }}>
+    <section id="features" style={{ padding: '120px 0', maxWidth: 1200, margin: '0 auto', paddingLeft: 32, paddingRight: 32, scrollMarginTop: 80 }}>
       <motion.div {...inViewFadeUp(0)} style={{ marginBottom: 64 }}>
         <div style={{
           fontFamily: 'inherit',
@@ -452,7 +452,7 @@ const COMMUNITY_PATHS = [
 
 function CommunitySection() {
   return (
-    <section style={{ padding: '120px 0', maxWidth: 1200, margin: '0 auto', paddingLeft: 32, paddingRight: 32 }}>
+    <section id="community" style={{ padding: '120px 0', maxWidth: 1200, margin: '0 auto', paddingLeft: 32, paddingRight: 32, scrollMarginTop: 80 }}>
       <motion.div {...inViewFadeUp(0)} style={{ marginBottom: 56 }}>
         <div style={{
           fontFamily: 'inherit',
@@ -647,11 +647,18 @@ function LandingNav({ onGetStarted }) {
 
       {/* Center links */}
       <div className="landing-nav-links" style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
-        {['How it works', 'Features', 'Community'].map(label => (
+        {[
+          { label: 'How it works', id: 'how-it-works' },
+          { label: 'Features', id: 'features' },
+          { label: 'Community', id: 'community' },
+        ].map(({ label, id }) => (
           <a
             key={label}
-            href="#"
-            onClick={e => e.preventDefault()}
+            href={`#${id}`}
+            onClick={e => {
+              e.preventDefault()
+              document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+            }}
             style={{
               fontFamily: 'Hanken Grotesk, sans-serif',
               fontSize: 14,
@@ -740,6 +747,9 @@ export default function LandingPage({ onGetStarted }) {
       <DotGrid />
       <LandingNav onGetStarted={onGetStarted} />
 
+      {/* All page content is lifted above the fixed background canvas (z-0). Without
+          this wrapper the non-positioned sections paint below the canvas and vanish. */}
+      <div style={{ position: 'relative', zIndex: 1 }}>
       <div style={{ position: 'relative' }}>
         <div style={{ position: 'relative', zIndex: 1 }}>
           <div
@@ -846,28 +856,6 @@ export default function LandingPage({ onGetStarted }) {
                 >
                   Build my path — free <IcoArrow />
                 </button>
-                <button
-                  onClick={onGetStarted}
-                  style={{
-                    background: 'transparent',
-                    color: '#f2f3f9',
-                    border: '1px solid #1c2326',
-                    borderRadius: 999,
-                    fontFamily: 'Hanken Grotesk, sans-serif',
-                    fontWeight: 600,
-                    fontSize: 15,
-                    padding: '14px 24px',
-                    cursor: 'pointer',
-                    transition: 'all 0.25s ease',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 8,
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = '#2c3538' }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#1c2326' }}
-                >
-                  <span style={{ fontSize: 11 }}>▶</span> Watch the 2-min demo
-                </button>
               </motion.div>
 
               <motion.div {...fadeUp(0.85)} style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 32 }}>
@@ -953,6 +941,7 @@ export default function LandingPage({ onGetStarted }) {
 
       {/* Footer CTA */}
       <FooterCTA onGetStarted={onGetStarted} />
+      </div>
     </div>
   )
 }

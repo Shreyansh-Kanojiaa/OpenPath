@@ -24,7 +24,6 @@ export default function DotGrid() {
 
   useEffect(() => {
     const canvas = canvasRef.current
-    const parent = canvas.parentElement
     const ctx = canvas.getContext('2d')
 
     let width = 0
@@ -137,8 +136,11 @@ export default function DotGrid() {
 
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2)
-      width = parent.clientWidth
-      height = parent.clientHeight
+      // Size to the viewport, not the document. The canvas is position:fixed, so a
+      // full-document-height canvas is both wasteful and triggers a compositor bug
+      // where the oversized layer paints over scrolled content and blanks the page.
+      width = window.innerWidth
+      height = window.innerHeight
       canvas.width = Math.round(width * dpr)
       canvas.height = Math.round(height * dpr)
       canvas.style.width = width + 'px'
@@ -151,16 +153,15 @@ export default function DotGrid() {
     resize()
     drawStatic()
 
-    const resizeObserver = new ResizeObserver(resize)
-    resizeObserver.observe(parent)
+    window.addEventListener('resize', resize)
     window.addEventListener('pointermove', onPointerMove, { passive: true })
 
     return () => {
-      resizeObserver.disconnect()
+      window.removeEventListener('resize', resize)
       window.removeEventListener('pointermove', onPointerMove)
       if (rafId != null) cancelAnimationFrame(rafId)
     }
   }, [])
 
-  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full z-0 pointer-events-none" />
+  return <canvas ref={canvasRef} className="fixed inset-0 w-full h-full z-0 pointer-events-none" />
 }
