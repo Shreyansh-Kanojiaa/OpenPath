@@ -1,0 +1,47 @@
+# Production overlay. Use with:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# Differences from dev:
+#   - The backend is NOT published to the host. Only nginx is public.
+#   - nginx terminates HTTPS (443) and redirects HTTP (80) to it.
+#   - A certbot sidecar obtains and auto-renews Let's Encrypt certificates.
+#
+# Before first boot, edit docker/nginx.prod.conf and replace your-domain.com,
+# then run scripts/init-letsencrypt.sh to issue the initial certificate.
+
+services:
+  backend:
+    environment:
+      ENVIRONMENT: production
+    # No `ports:` here on purpose. The backend is reachable only over the internal
+    # compose network via nginx's /api proxy.
+
+  frontend:
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # TLS-enabled config mounted over the HTTP-only one baked into the image.
+      - ./docker/nginx.prod.conf:/etc/nginx/conf.d/app.conf:ro
+      # Certificates and the ACME webroot, shared read-only with nginx.
+      - certbot_conf:/etc/letsencrypt:ro
+      - certbot_www:/var/www/certbot:ro
+    # Reload every 6h so nginx picks up certs certbot renewed in the background.
+    command: >
+      sh -c "while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g 'daemon off;'"
+
+  # ── Certbot: obtains and renews Let's Encrypt certificates ───────────────────
+  certbot:
+    image: certbot/certbot
+    restart: unless-stopped
+    volumes:
+      - certbot_conf:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+    # Attempt renewal every 12h. `renew` is a no-op until a cert is within 30 days
+    # of expiry, so this is safe to run often and gives ~60 days of retry headroom.
+    entrypoint: >
+      sh -c "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done"
+
+volumes:
+  certbot_conf:
+  certbot_www:

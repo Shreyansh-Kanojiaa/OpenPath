@@ -1,0 +1,44 @@
+# Keep the build context small and images clean. The backend build uses `context: .`
+# (the whole repo), so everything not needed at runtime is excluded here.
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+*.egg-info/
+.pytest_cache/
+
+# Local databases (never ship dev data into an image)
+*.db
+backend/*.db
+
+# Node / frontend build artifacts (frontend image installs its own deps)
+node_modules/
+react-frontend/node_modules/
+react-frontend/dist/
+react-frontend/build/
+
+# Backend tests are not needed in the runtime image
+backend/tests/
+
+# Version control and CI
+.git/
+.github/
+
+# Env and secrets (baked-in secrets would be a leak)
+.env
+.env.local
+.env.*.local
+
+# Editor / OS cruft
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Standalone bundled-page artifact, not part of the app
+OpenPath.html
+
+# Docs and archived prototype
+legacy/

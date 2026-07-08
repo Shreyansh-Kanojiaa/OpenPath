@@ -1,4 +1,14 @@
-version: "3.9"
+# Base stack shared by dev and prod.
+#
+#   Local dev:   docker compose up --build
+#                (docker-compose.override.yml is auto-loaded: publishes ports,
+#                 runs the backend with --reload)
+#
+#   Production:  docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#                (adds TLS nginx + certbot, keeps the backend off the public internet)
+#
+# This base intentionally publishes NO host ports. Each environment decides what to
+# expose in its own overlay, so production never accidentally exposes the backend.
 
 services:
   # ── PostgreSQL Database ──────────────────────────────────────────────────────
@@ -18,13 +28,12 @@ services:
       retries: 5
 
   # ── FastAPI Backend ──────────────────────────────────────────────────────────
+  # Default command is gunicorn (see Dockerfile). The dev overlay swaps in uvicorn --reload.
   backend:
     build:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
-    ports:
-      - "${BACKEND_PORT:-8000}:8000"
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-openpath}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your .env file (see .env.example)}@db:5432/${POSTGRES_DB:-openpath_db}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
@@ -37,14 +46,14 @@ services:
       db:
         condition: service_healthy
 
-  # ── React Frontend (Vite → nginx) ───────────────────────────────────────────
+  # ── React Frontend (Vite build → nginx) ─────────────────────────────────────
+  # The image bakes an HTTP-only nginx config (docker/nginx.conf). The prod overlay
+  # mounts docker/nginx.prod.conf over it to add TLS.
   frontend:
     build:
       context: .
       dockerfile: Dockerfile.frontend
     restart: unless-stopped
-    ports:
-      - "${FRONTEND_PORT:-80}:80"
     depends_on:
       - backend
 
