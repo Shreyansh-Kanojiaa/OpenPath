@@ -9,7 +9,8 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True, nullable=True)
-    hashed_password = Column(String, nullable=True)
+    google_sub = Column(String, unique=True, index=True, nullable=True)  # Google account subject id
+    hashed_password = Column(String, nullable=True)  # legacy/unused — retained to avoid a destructive migration
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     courses = relationship("Course", back_populates="owner")

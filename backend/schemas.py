@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field
 from typing import List, Optional
 import datetime
 
@@ -90,15 +90,8 @@ class FlashcardSet(BaseModel):
 
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
-class UserCreate(BaseModel):
-    username: str = Field(min_length=3, max_length=50)
-    email: EmailStr
-    password: str = Field(min_length=6)
-
-
-class UserLogin(BaseModel):
-    email: str
-    password: str
+class GoogleAuthRequest(BaseModel):
+    credential: str  # the Google ID token returned by Google Identity Services
 
 
 class Token(BaseModel):

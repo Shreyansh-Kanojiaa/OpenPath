@@ -16,8 +16,10 @@ services:
     # Dev server with auto-reload, replacing the gunicorn production default.
     command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     # Mount source so code edits reload without a rebuild.
+    # `:z` relabels the files for SELinux (Fedora/RHEL) so the container can read
+    # them; without it the mount is denied and uvicorn can't import `main` (502).
     volumes:
-      - ./backend:/app
+      - ./backend:/app:z
 
   frontend:
     # Serve the built SPA over plain HTTP on the host.

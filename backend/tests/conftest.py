@@ -75,15 +75,20 @@ def create_course_with_module(client, monkeypatch):
 
 
 @pytest.fixture()
-def registered_user(client):
-    client.post(
-        "/auth/register",
-        json={"username": "alice", "email": "alice@test.com", "password": "password123"},
+def registered_user(client, monkeypatch):
+    """Signs in via /auth/google with the Google credential verification mocked."""
+    import auth as auth_lib
+
+    monkeypatch.setattr(
+        auth_lib,
+        "verify_google_credential",
+        lambda credential: {"sub": "google-alice", "email": "alice@test.com", "name": "Alice"},
     )
-    resp = client.post("/auth/login", json={"email": "alice@test.com", "password": "password123"})
-    token = resp.json()["access_token"]
+    resp = client.post("/auth/google", json={"credential": "dummy-token"})
+    body = resp.json()
+    token = body["access_token"]
     return {
         "token": token,
         "headers": {"Authorization": f"Bearer {token}"},
-        "user_id": resp.json()["user_id"],
+        "user_id": body["user_id"],
     }

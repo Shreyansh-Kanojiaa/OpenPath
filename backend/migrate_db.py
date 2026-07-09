@@ -12,6 +12,9 @@ from sqlalchemy import text, inspect
 # Define the columns to add per table.
 # Each entry: (column_name, column_sql_definition)
 MIGRATIONS = {
+    "users": [
+        ("google_sub", "VARCHAR DEFAULT NULL"),
+    ],
     "courses": [
         ("project_prompt", "TEXT DEFAULT NULL"),
         ("required_resources", "TEXT DEFAULT NULL"),  # JSON stored as TEXT

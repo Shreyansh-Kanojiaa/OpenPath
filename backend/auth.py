@@ -33,6 +33,12 @@ SECRET_KEY = _env_secret
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))  # 24h
 
+# Google Sign-In: the OAuth Client ID the ID token must be issued for (its `aud`).
+# Fail fast in production if missing — without it we cannot verify Google tokens.
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+if not GOOGLE_CLIENT_ID and ENVIRONMENT == "production":
+    raise RuntimeError("GOOGLE_CLIENT_ID must be set in production (Google Sign-In cannot be verified without it).")
+
 # ── Crypto ────────────────────────────────────────────────────────────────────
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -65,6 +71,19 @@ def decode_token(token: str) -> Optional[dict]:
         return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except JWTError:
         return None
+
+
+def verify_google_credential(credential: str) -> dict:
+    """Verify a Google ID token and return its claims.
+
+    Raises on any invalid/expired/wrong-audience token. Imported lazily so the
+    google-auth dependency is only needed when Google Sign-In is actually used,
+    and so tests can monkeypatch this function without importing google-auth.
+    """
+    from google.oauth2 import id_token
+    from google.auth.transport import requests as google_requests
+
+    return id_token.verify_oauth2_token(credential, google_requests.Request(), GOOGLE_CLIENT_ID)
 
 
 # ── FastAPI Dependency ────────────────────────────────────────────────────────

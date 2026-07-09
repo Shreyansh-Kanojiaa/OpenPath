@@ -2,12 +2,16 @@ import schemas
 import services
 
 
-def _register_and_login(client, username, email):
-    client.post(
-        "/auth/register",
-        json={"username": username, "email": email, "password": "password123"},
+def _register_and_login(client, monkeypatch, username, email):
+    """Create a distinct user via the Google flow (verification mocked) and return auth headers."""
+    import auth as auth_lib
+
+    monkeypatch.setattr(
+        auth_lib,
+        "verify_google_credential",
+        lambda credential: {"sub": f"google-{username}", "email": email, "name": username},
     )
-    resp = client.post("/auth/login", json={"email": email, "password": "password123"})
+    resp = client.post("/auth/google", json={"credential": "x"})
     return {"Authorization": f"Bearer {resp.json()['access_token']}"}
 
 
@@ -40,9 +44,9 @@ def test_generate_course_creates_two_modules(client, registered_user, monkeypatc
     assert len(detail.json()["modules"]) == 2
 
 
-def test_my_courses_only_returns_own(client, registered_user, create_course_with_module):
+def test_my_courses_only_returns_own(client, registered_user, create_course_with_module, monkeypatch):
     create_course_with_module(registered_user["headers"])
-    other_headers = _register_and_login(client, "other", "other@test.com")
+    other_headers = _register_and_login(client, monkeypatch, "other", "other@test.com")
 
     resp = client.get("/courses", headers=other_headers)
     assert resp.status_code == 200
@@ -88,17 +92,17 @@ def test_public_courses_search_and_pagination(client, registered_user, create_co
     assert resp.json()["offset"] == 5
 
 
-def test_private_course_denied_to_others(client, registered_user, create_course_with_module):
+def test_private_course_denied_to_others(client, registered_user, create_course_with_module, monkeypatch):
     course, _ = create_course_with_module(registered_user["headers"])
-    other_headers = _register_and_login(client, "other", "other@test.com")
+    other_headers = _register_and_login(client, monkeypatch, "other", "other@test.com")
 
     resp = client.get(f"/courses/{course['id']}", headers=other_headers)
     assert resp.status_code == 403
 
 
-def test_visibility_toggle_requires_ownership(client, registered_user, create_course_with_module):
+def test_visibility_toggle_requires_ownership(client, registered_user, create_course_with_module, monkeypatch):
     course, _ = create_course_with_module(registered_user["headers"])
-    other_headers = _register_and_login(client, "other", "other@test.com")
+    other_headers = _register_and_login(client, monkeypatch, "other", "other@test.com")
 
     resp = client.patch(
         f"/courses/{course['id']}/visibility",
@@ -108,7 +112,7 @@ def test_visibility_toggle_requires_ownership(client, registered_user, create_co
     assert resp.status_code == 403
 
 
-def test_enroll_copies_modules_and_rejects_own_course(client, registered_user, create_course_with_module):
+def test_enroll_copies_modules_and_rejects_own_course(client, registered_user, create_course_with_module, monkeypatch):
     course, _ = create_course_with_module(registered_user["headers"])
     client.patch(
         f"/courses/{course['id']}/visibility",
@@ -119,7 +123,7 @@ def test_enroll_copies_modules_and_rejects_own_course(client, registered_user, c
     resp = client.post(f"/courses/{course['id']}/enroll", headers=registered_user["headers"])
     assert resp.status_code == 400  # already owns it
 
-    other_headers = _register_and_login(client, "other", "other@test.com")
+    other_headers = _register_and_login(client, monkeypatch, "other", "other@test.com")
     resp = client.post(f"/courses/{course['id']}/enroll", headers=other_headers)
     assert resp.status_code == 200
     enrolled = resp.json()
@@ -128,9 +132,9 @@ def test_enroll_copies_modules_and_rejects_own_course(client, registered_user, c
     assert len(detail.json()["modules"]) == 1
 
 
-def test_enroll_rejects_non_public_course(client, registered_user, create_course_with_module):
+def test_enroll_rejects_non_public_course(client, registered_user, create_course_with_module, monkeypatch):
     course, _ = create_course_with_module(registered_user["headers"])
-    other_headers = _register_and_login(client, "other", "other@test.com")
+    other_headers = _register_and_login(client, monkeypatch, "other", "other@test.com")
 
     resp = client.post(f"/courses/{course['id']}/enroll", headers=other_headers)
     assert resp.status_code == 403

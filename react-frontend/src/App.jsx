@@ -240,50 +240,54 @@ function NavPill({ active, setPage, user, onLogout }) {
   )
 }
 
-function AuthScreen({ onLogin }) {
-  const [mode, setMode] = useState('login')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [username, setUsername] = useState('')
-  const [confirm, setConfirm] = useState('')
-  const [err, setErr] = useState('')
-  const [info, setInfo] = useState('')
-  const [loading, setLoading] = useState(false)
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setErr(''); setInfo(''); setLoading(true)
+function AuthScreen({ onLogin }) {
+  const [err, setErr] = useState('')
+  const btnRef = useRef(null)
+
+  const handleCredential = async (response) => {
+    setErr('')
     try {
-      if (mode === 'login') {
-        const res = await fetch(`${API}/auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
-        })
-        const data = await res.json()
-        if (!res.ok) throw new Error(data.detail || 'Login failed')
-        localStorage.setItem('op_token', data.access_token)
-        onLogin({ username: data.username, user_id: data.user_id, token: data.access_token })
-      } else {
-        if (password !== confirm) throw new Error('Passwords do not match')
-        const res = await fetch(`${API}/auth/register`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, email, password }),
-        })
-        if (!res.ok) {
-          const data = await res.json()
-          throw new Error(data.detail || 'Registration failed')
-        }
-        setInfo('Account created! You can now sign in.')
-        setMode('login')
-      }
+      const res = await fetch(`${API}/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential: response.credential }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.detail || 'Sign-in failed')
+      localStorage.setItem('op_token', data.access_token)
+      onLogin({ username: data.username, user_id: data.user_id, token: data.access_token })
     } catch (e) {
       setErr(e.message)
-    } finally {
-      setLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID) {
+      setErr('Google Sign-In is not configured (missing VITE_GOOGLE_CLIENT_ID).')
+      return
+    }
+    let cancelled = false
+    // Google's GSI script loads async — poll until window.google is available, then render the button.
+    const tryRender = () => {
+      if (cancelled || !window.google?.accounts?.id) return false
+      window.google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleCredential })
+      if (btnRef.current) {
+        window.google.accounts.id.renderButton(btnRef.current, {
+          theme: 'filled_black', size: 'large', shape: 'pill', text: 'continue_with', width: 300,
+        })
+      }
+      return true
+    }
+    if (tryRender()) return () => { cancelled = true }
+    const iv = setInterval(() => { if (tryRender()) clearInterval(iv) }, 200)
+    const to = setTimeout(() => {
+      clearInterval(iv)
+      if (!cancelled && !window.google?.accounts?.id) setErr('Could not load Google Sign-In. Check your connection and retry.')
+    }, 8000)
+    return () => { cancelled = true; clearInterval(iv); clearTimeout(to) }
+  }, [])
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-base relative">
@@ -302,86 +306,26 @@ function AuthScreen({ onLogin }) {
       </div>
 
       <div className="flex items-center justify-center p-8 relative z-10">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           className="w-full max-w-md"
         >
           <div className="glass-card p-10 bg-surface/50">
-            <div className="flex bg-white/5 p-1 rounded mb-12 shadow-inner">
-              {['login', 'register'].map((m) => (
-                <button
-                  key={m}
-                  onClick={() => { setMode(m); setErr(''); setInfo('') }}
-                  className={`flex-1 py-2.5 text-[10px] uppercase tracking-[0.2em] font-bold rounded-lg transition-all ${mode === m ? 'bg-blue text-charcoal-900 shadow-blue-glow' : 'text-slate-500'}`}
-                >
-                  {m === 'login' ? 'Sign in' : 'Create account'}
-                </button>
-              ))}
+            <h2 className="text-3xl font-display tracking-tight mb-3">Welcome to OpenPath</h2>
+            <p className="text-sm text-slate-400 mb-12 leading-relaxed">
+              Sign in with your Google account to start building personalized learning paths.
+            </p>
+
+            <div className="flex justify-center min-h-[44px]">
+              <div ref={btnRef} />
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-8">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={mode}
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  className="space-y-8"
-                >
-                  {mode === 'register' && (
-                    <div className="space-y-3">
-                      <label className="text-[10px] uppercase tracking-[0.3em] text-slate-500 font-mono ml-4">Identifier</label>
-                      <input 
-                        className="w-full bg-white/5 border border-white/10 rounded px-6 py-4 text-sm font-mono focus:outline-none focus:border-blue/50 focus:ring-1 focus:ring-blue/20 transition-all"
-                        placeholder="your_username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                      />
-                    </div>
-                  )}
-                  <div className="space-y-3">
-                    <label className="text-[10px] uppercase tracking-[0.3em] text-slate-500 font-mono ml-4">Email</label>
-                    <input 
-                      type="email"
-                      className="w-full bg-white/5 border border-white/10 rounded px-6 py-4 text-sm font-mono focus:outline-none focus:border-blue/50 focus:ring-1 focus:ring-blue/20 transition-all"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-3">
-                    <label className="text-[10px] uppercase tracking-[0.3em] text-slate-500 font-mono ml-4">Password</label>
-                    <input 
-                      type="password"
-                      className="w-full bg-white/5 border border-white/10 rounded px-6 py-4 text-sm font-mono focus:outline-none focus:border-blue/50 focus:ring-1 focus:ring-blue/20 transition-all"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
-                  </div>
-                  {mode === 'register' && (
-                    <div className="space-y-3">
-                      <label className="text-[10px] uppercase tracking-[0.3em] text-slate-500 font-mono ml-4">Confirm password</label>
-                      <input 
-                        type="password"
-                        className="w-full bg-white/5 border border-white/10 rounded px-6 py-4 text-sm font-mono focus:outline-none focus:border-blue/50 focus:ring-1 focus:ring-blue/20 transition-all"
-                        placeholder="••••••••"
-                        value={confirm}
-                        onChange={(e) => setConfirm(e.target.value)}
-                      />
-                    </div>
-                  )}
-                </motion.div>
-              </AnimatePresence>
+            {err && <p className="text-[11px] text-rose-400 font-mono px-4 mt-6 text-center">{err}</p>}
 
-              {info && <p className="text-[11px] text-mastered font-mono px-4">{info}</p>}
-              {err && <p className="text-[11px] text-rose-400 font-mono px-4">{err}</p>}
-
-              <Button type="submit" disabled={loading} className="w-full py-5 mt-6 text-base font-semibold tracking-[0.1em] uppercase">
-                {loading ? 'Loading...' : mode === 'login' ? 'Sign in' : 'Create account'}
-              </Button>
-            </form>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-slate-600 font-mono text-center mt-12">
+              Google accounts only · No password required
+            </p>
           </div>
         </motion.div>
       </div>
@@ -389,7 +333,7 @@ function AuthScreen({ onLogin }) {
   )
 }
 
-function Dashboard({ courses, onSelectCourse, user }) {
+function Dashboard({ courses, onSelectCourse, onNewCourse, user }) {
   const totalCompleted = courses.reduce((acc, c) => acc + c.modules.filter(m => m.is_completed || m.is_skipped).length, 0)
   
   return (
@@ -478,6 +422,7 @@ function Dashboard({ courses, onSelectCourse, user }) {
         <motion.button
           {...BENTO_ITEM}
           transition={{ delay: (courses.length % 8) * 0.1 }}
+          onClick={onNewCourse}
           className="md:col-span-2 lg:col-span-1 rounded-2xl border-2 border-dashed border-white/5 hover:border-blue/40 hover:bg-blue/5 transition-all flex flex-col items-center justify-center gap-8 group cursor-pointer min-h-[420px]"
         >
           <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-slate-500 group-hover:text-cyan group-hover:scale-105 group-hover:bg-blue/10 transition-all duration-500">
@@ -1465,7 +1410,7 @@ export default function App() {
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="flex-1 flex flex-col relative z-10"
           >
-            {page === 'dashboard' && <Dashboard courses={courses} onSelectCourse={(c) => { setSelected(c); setPage('course') }} user={user} />}
+            {page === 'dashboard' && <Dashboard courses={courses} onSelectCourse={(c) => { setSelected(c); setPage('course') }} onNewCourse={() => setPage('generate')} user={user} />}
             {page === 'course' && selected && (
               <CourseView 
                 course={selected} 
