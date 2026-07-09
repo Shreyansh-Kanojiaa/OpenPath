@@ -22,7 +22,7 @@ The learning dashboard displays your active courses, overall progress, and speci
 ### Features and Pages
 
 #### Premium Landing Page
-The entry point featuring clean typography, feature highlights, and user authentication.
+The entry point featuring clean typography, feature highlights, and one-tap Google Sign-In.
 ![OpenPath Landing Page](./assets/landing_page.png)
 
 #### AI Syllabus Generator
@@ -54,7 +54,7 @@ Evaluate job readiness against targeted professional roles and map out your skil
 *   **Core API Framework**: FastAPI (Asynchronous Python server)
 *   **ORM / Database**: SQLAlchemy + Alembic (SQLite local database with automatic migrations, configurable for PostgreSQL)
 *   **AI Orchestrator**: Google Gemini 2.5 Flash API (via `google-genai` SDK)
-*   **Authentication**: JSON Web Tokens (JWT) with `python-jose` and `passlib` (bcrypt)
+*   **Authentication**: Google Sign-In only (Google Identity Services ID-token flow) — the frontend obtains a signed Google credential, the backend verifies it with `google-auth` and issues its own session JWT via `python-jose`. No passwords are stored or accepted.
 *   **Data Scrapers**: `youtube-search-python` and `youtube-transcript-api`
 
 ### Frontend
@@ -71,6 +71,22 @@ Evaluate job readiness against targeted professional roles and map out your skil
 *   Python 3.10+
 *   Node.js 18+
 *   Gemini API Key (Get a key from Google AI Studio)
+*   Google OAuth 2.0 **Client ID** (type: *Web application*) — sign-in requires it. See [Google Sign-In Setup](#google-sign-in-setup) below.
+
+---
+
+### Google Sign-In Setup
+
+Sign-in is Google-only, so you need an OAuth Client ID before the app is usable:
+
+1.  In the [Google Cloud Console](https://console.cloud.google.com/), go to **APIs & Services → Credentials → Create Credentials → OAuth client ID**, and choose **Web application**.
+2.  Under **Authorized JavaScript origins**, add the origins you'll serve from:
+    *   `http://localhost:5173` (Vite dev server)
+    *   `http://localhost` (Docker frontend on port 80)
+    *   `https://your-domain.com` (production)
+3.  Leave **Authorized redirect URIs** empty — the ID-token flow doesn't use a redirect endpoint.
+4.  Under **APIs & Services → OAuth consent screen (Audience)**, add yourself as a **Test user**, or **Publish** the app so any Google account can sign in (basic `email`/`profile` scopes need no verification review).
+5.  Copy the generated Client ID (`…apps.googleusercontent.com`) — this is a **public** value (no client secret is used in this flow) and goes into your `.env` as `GOOGLE_CLIENT_ID`.
 
 ---
 
@@ -88,7 +104,7 @@ pip install -r requirements.txt
 
 # Setup environment configuration
 cp .env.example .env
-# Edit .env and supply your GEMINI_API_KEY
+# Edit .env and supply GEMINI_API_KEY, GOOGLE_CLIENT_ID, and (for production) JWT_SECRET_KEY
 ```
 
 To run the backend server:
@@ -106,16 +122,27 @@ cd react-frontend
 # Install dependencies
 npm install
 
+# The Vite dev server reads its own .env (the root .env is backend-only).
+# Point the Google button at your Client ID:
+echo "VITE_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com" > .env
+
 # Run Vite dev server
 npm run dev
 ```
 The React frontend dashboard will open at http://localhost:5173.
 
+> **Note:** `VITE_GOOGLE_CLIENT_ID` must be set for the "Sign in with Google" button to render. For `npm run dev` it comes from `react-frontend/.env`; the Docker build instead bakes it in from the root `.env`'s `GOOGLE_CLIENT_ID` (see below).
+
 ---
 
 ### Docker Containerized Setup
 
-You can launch the entire stack (PostgreSQL database, FastAPI backend, and Nginx-served React frontend) with a single command. Make sure to specify your `GEMINI_API_KEY` in the root `.env` first:
+You can launch the entire stack (PostgreSQL database, FastAPI backend, and Nginx-served React frontend) with a single command. First fill in the root `.env` — compose fails fast if any required value is missing:
+
+*   `GOOGLE_CLIENT_ID` — required (feeds both backend token verification **and**, at build time, the frontend bundle)
+*   `JWT_SECRET_KEY` — required; generate a strong value: `python -c "import secrets; print(secrets.token_hex(32))"`
+*   `POSTGRES_PASSWORD` — required (avoid `@`, it breaks the connection string)
+*   `GEMINI_API_KEY` — optional (falls back to mock responses if blank)
 
 ```bash
 # Build and spin up all services
@@ -123,6 +150,18 @@ docker compose up --build -d
 ```
 *   React Frontend is exposed on http://localhost (port 80)
 *   FastAPI backend is exposed on http://localhost:8000 (port 8000)
+
+> **`GOOGLE_CLIENT_ID` is baked into the frontend bundle at build time.** If you change it (or set it for the first time), you must rebuild the image with `--build` — a plain restart keeps the stale bundle and the Google button won't render.
+
+#### Production
+
+Production uses an explicit overlay that adds TLS/nginx and keeps the backend off the public internet:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+```
+
+Set `CORS_ORIGINS` to your HTTPS domain(s), add that domain to the Client ID's **Authorized JavaScript origins** in Google Cloud Console, and edit `docker/nginx.prod.conf` + run `scripts/init-letsencrypt.sh` for certificates. Note that Postgres only applies `POSTGRES_PASSWORD` when its data volume is **first** created — changing it later requires re-initializing the volume or running `ALTER USER` inside the db container.
 
 ---
 
@@ -135,7 +174,7 @@ OpenPath/
 │   ├── alembic/               # Database migrations
 │   ├── routers/                # FastAPI routers (auth, courses, modules, quiz, career)
 │   ├── tests/                  # pytest suite
-│   ├── auth.py                 # JWT creation and password verification
+│   ├── auth.py                 # App JWT creation/decoding + Google ID-token verification
 │   ├── database.py             # SQLAlchemy engine, session maker, DB base
 │   ├── main.py                  # FastAPI app composition root & middleware configuration
 │   ├── migrate_db.py            # Auto-migration utilities
@@ -167,8 +206,7 @@ The FastAPI backend exposes the following primary endpoints. You can explore sta
 
 | Method | Endpoint | Description | Auth Required |
 | :--- | :--- | :--- | :---: |
-| **POST** | `/auth/register` | Register a new user with secure password hashing | No |
-| **POST** | `/auth/login` | Authenticate credentials and return a JWT access token | No |
+| **POST** | `/auth/google` | Verify a Google ID token, upsert the user, and return a JWT access token | No |
 | **GET** | `/auth/me` | Fetch active user profile from JWT session | Yes |
 | **POST** | `/generate-course` | Core Gemini engine generating syllabus and YouTube ranking | Yes |
 | **GET** | `/courses` | Retrieve list of all enrolled learning paths for user | Yes |
