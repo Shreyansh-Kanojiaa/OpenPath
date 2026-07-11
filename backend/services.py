@@ -10,6 +10,61 @@ import re
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# SKILL VALIDATION  (with LRU cache to avoid redundant Gemini calls)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@functools.lru_cache(maxsize=256)
+def _cached_skill_validation(skill: str) -> str:
+    """
+    Inner function whose result is cached by normalized skill string.
+    Returns the raw JSON string so it is picklable by lru_cache.
+    """
+    prompt = f"""
+    Determine whether "{skill}" names a real, learnable subject, skill, or topic
+    that a structured course could reasonably be built around (e.g. "Python",
+    "watercolor painting", "public speaking", "Rust", "guitar").
+
+    Reject it if it is gibberish, random keyboard mashing, empty/meaningless text,
+    or not a coherent subject (e.g. "asdkjfh", "aaaaaa", "???").
+
+    Be lenient: obscure, niche, or informally-phrased skills should still be
+    accepted as valid if they name a real thing someone could learn.
+
+    Generate the response strictly as a JSON object matching the requested schema.
+    """
+
+    client = genai.Client()
+    response = client.models.generate_content(
+        model="gemini-flash-latest",
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            response_mime_type="application/json",
+            response_schema=schemas.SkillValidation,
+            temperature=0.0,
+        ),
+    )
+    return response.text
+
+
+def validate_skill(skill: str) -> schemas.SkillValidation:
+    """
+    Returns a SkillValidation verdict for the given skill string.
+    Fails OPEN (treats input as valid) if GEMINI_API_KEY is unset or the
+    classification call throws — must never block a user due to an infra/API
+    issue, matching generate_syllabus's mock-fallback convention.
+    """
+    if not os.environ.get("GEMINI_API_KEY"):
+        return schemas.SkillValidation(is_valid_skill=True, reason="Validation skipped: no API key configured.")
+
+    try:
+        raw_json = _cached_skill_validation(skill.strip().lower())
+        return schemas.SkillValidation.model_validate_json(raw_json)
+    except Exception as e:
+        print("Gemini skill validation skipped/failed. Failing open:", e)
+        return schemas.SkillValidation(is_valid_skill=True, reason="Validation skipped due to an internal error.")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # SYLLABUS GENERATION  (with LRU cache to avoid redundant Gemini calls)
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -41,7 +96,7 @@ def _cached_syllabus(skill: str, level: int, time: str, depth: str) -> str:
 
     client = genai.Client()
     response = client.models.generate_content(
-        model="gemini-2.5-flash",
+        model="gemini-flash-latest",
         contents=prompt,
         config=types.GenerateContentConfig(
             response_mime_type="application/json",
@@ -340,7 +395,7 @@ def _ai_rerank_videos(candidates: list[dict], module_title: str, module_descript
     
     try:
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-flash-latest",
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
@@ -467,7 +522,7 @@ def generate_quiz_from_transcript(video_id: str, module_id: int, fallback_topic:
             f"The questions must test comprehension of the material.\nTranscript: {transcript_text}"
         )
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-flash-latest",
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
@@ -489,7 +544,7 @@ def generate_quiz_from_transcript(video_id: str, module_id: int, fallback_topic:
                 "DO NOT use True/False questions or 'All of the above'/'None of the above' options."
             )
             response = client.models.generate_content(
-                model="gemini-2.5-flash",
+                model="gemini-flash-latest",
                 contents=topic_prompt,
                 config=types.GenerateContentConfig(
                     response_mime_type="application/json",
@@ -548,7 +603,7 @@ def generate_flashcards(module_id: int, video_id: str | None, fallback_topic: st
 
     try:
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-flash-latest",
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
@@ -609,7 +664,7 @@ def chat_with_module(video_id: str, module_topic: str, messages: list[schemas.Ch
     
     try:
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-flash-latest",
             contents=prompt,
         )
         return response.text
@@ -654,7 +709,7 @@ def generate_offline_notes(video_id: str, module_topic: str) -> str:
     
     try:
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-flash-latest",
             contents=prompt,
         )
         return response.text
@@ -691,7 +746,7 @@ def calculate_job_readiness(job_title: str, company: str, user_completed_skills:
     
     try:
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-flash-latest",
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
@@ -737,7 +792,7 @@ def generate_skill_graph(user_completed_skills: list[str]) -> schemas.SkillGraph
     
     try:
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-flash-latest",
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",

@@ -18,6 +18,11 @@ def _register_and_login(client, monkeypatch, username, email):
 def test_generate_course_creates_two_modules(client, registered_user, monkeypatch):
     monkeypatch.setattr(
         services,
+        "validate_skill",
+        lambda skill: schemas.SkillValidation(is_valid_skill=True, reason="ok"),
+    )
+    monkeypatch.setattr(
+        services,
         "generate_syllabus",
         lambda *a, **kw: schemas.CourseCreate(
             skill_name="python",
@@ -42,6 +47,22 @@ def test_generate_course_creates_two_modules(client, registered_user, monkeypatc
 
     detail = client.get(f"/courses/{course['id']}", headers=registered_user["headers"])
     assert len(detail.json()["modules"]) == 2
+
+
+def test_generate_course_rejects_invalid_skill(client, registered_user, monkeypatch):
+    monkeypatch.setattr(
+        services,
+        "validate_skill",
+        lambda skill: schemas.SkillValidation(is_valid_skill=False, reason="gibberish"),
+    )
+
+    resp = client.post(
+        "/generate-course",
+        params={"skill": "asdkjfh", "level": 3, "time": "3-4 hrs/week"},
+        headers=registered_user["headers"],
+    )
+    assert resp.status_code == 400
+    assert "valid skill" in resp.json()["detail"].lower()
 
 
 def test_my_courses_only_returns_own(client, registered_user, create_course_with_module, monkeypatch):

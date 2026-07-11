@@ -5,7 +5,7 @@ import { LiveTutor } from './features/LiveTutor'
 import { OfflineNotesButton } from './features/OfflineNotes'
 import { CareerHub } from './features/CareerHub'
 import DotGrid from './components/DotGrid'
-import { Bot, Maximize2, Minimize2, MessageCircle } from 'lucide-react'
+import { Bot, Maximize2, Minimize2, MessageCircle, Loader2 } from 'lucide-react'
 // ─────────────────────────────────────────────────────────────────────────────
 // DESIGN SYSTEM & UTILS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -207,7 +207,7 @@ function NavPill({ active, setPage, user, onLogout }) {
         ))}
         <div className="w-[1px] h-6 bg-white/10 mx-2" />
         <div className="relative">
-          <button 
+          <button
             onClick={() => setShowUser(!showUser)}
             className="w-9 h-9 rounded-full bg-blue/10 border border-blue/20 flex items-center justify-center text-blue hover:bg-blue/20 transition-all overflow-hidden text-sm font-bold"
           >
@@ -1166,18 +1166,17 @@ const TIME_OPTIONS = [
   '1-2 hrs/week', '3-4 hrs/week', '5-7 hrs/week', '8-10 hrs/week', '10+ hrs/week',
 ]
 
-function GeneratePage({ token, onGenerate, initialSkill = '' }) {
+function GeneratePage({ token, onGenerate, initialSkill = '', isGenerating, setIsGenerating }) {
   const [skill, setSkill] = useState(initialSkill)
   const [level, setLevel] = useState(3)
   const [time, setTime] = useState('3-4 hrs/week')
   const [depth, setDepth] = useState('Standard (5 modules)')
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   const handleGenerate = async () => {
-    if (!skill.trim()) return
+    if (!skill.trim() || isGenerating) return
     setError('')
-    setLoading(true)
+    setIsGenerating(true)
     try {
       const url = `${API}/generate-course?skill=${encodeURIComponent(skill.trim())}&level=${level}&time=${encodeURIComponent(time)}&depth=${encodeURIComponent(depth)}`
       const res = await fetch(url, {
@@ -1192,7 +1191,7 @@ function GeneratePage({ token, onGenerate, initialSkill = '' }) {
     } catch (e) {
       setError(e.message || 'Something went wrong. Try again.')
     } finally {
-      setLoading(false)
+      setIsGenerating(false)
     }
   }
 
@@ -1204,7 +1203,8 @@ function GeneratePage({ token, onGenerate, initialSkill = '' }) {
           <p className="text-slate-400 text-base">Describe the skill you want to learn and we'll build a structured path for you.</p>
         </div>
 
-        <div className="space-y-8">
+        <div className="relative">
+        <div className={`space-y-8 transition-opacity duration-300 ${isGenerating ? 'opacity-30 pointer-events-none select-none' : ''}`}>
           {/* Skill input */}
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-slate-300">What do you want to learn?</label>
@@ -1213,7 +1213,7 @@ function GeneratePage({ token, onGenerate, initialSkill = '' }) {
               className="w-full bg-surface border border-border rounded px-4 py-3 text-base text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-blue transition-colors"
               value={skill}
               onChange={(e) => setSkill(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
+              onKeyDown={(e) => e.key === 'Enter' && !isGenerating && handleGenerate()}
             />
           </div>
 
@@ -1279,12 +1279,28 @@ function GeneratePage({ token, onGenerate, initialSkill = '' }) {
           {error && <p className="text-sm text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded px-4 py-3">{error}</p>}
 
           <button
-            disabled={!skill.trim() || loading}
+            disabled={!skill.trim() || isGenerating}
             onClick={handleGenerate}
             className="w-full py-4 text-base font-bold bg-cyan text-base rounded-2xl hover:shadow-blue-glow hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {loading ? 'Building your path...' : 'Generate my path'}
+            {isGenerating ? 'Building your path...' : 'Generate my path'}
           </button>
+        </div>
+
+        <AnimatePresence>
+          {isGenerating && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-base/60 backdrop-blur-sm rounded-2xl z-20"
+            >
+              <Loader2 className="w-10 h-10 animate-spin text-cyan" />
+              <p className="text-sm font-mono text-slate-300 uppercase tracking-widest">Building your path...</p>
+              <p className="text-xs text-slate-500 max-w-xs text-center">Feel free to browse the rest of OpenPath — we'll drop the new course on your dashboard when it's ready.</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
         </div>
       </motion.div>
     </div>
@@ -1315,6 +1331,7 @@ export default function App() {
   const [selected, setSelected] = useState(null)
   const [showLanding, setShowLanding] = useState(true)
   const [prefilledSkill, setPrefilledSkill] = useState('')
+  const [isGenerating, setIsGenerating] = useState(false)
 
   useEffect(() => {
     const token = localStorage.getItem('op_token')
@@ -1422,7 +1439,7 @@ export default function App() {
               />
             )}
             {page === 'discover' && <DiscoverPage token={user.token} onEnroll={async () => { await refreshCourses(); setPage('dashboard') }} />}
-            {page === 'generate' && <GeneratePage key={prefilledSkill} token={user.token} initialSkill={prefilledSkill} onGenerate={() => { refreshCourses(); setPage('dashboard'); setPrefilledSkill(''); }} />}
+            {page === 'generate' && <GeneratePage key={prefilledSkill} token={user.token} initialSkill={prefilledSkill} isGenerating={isGenerating} setIsGenerating={setIsGenerating} onGenerate={() => { refreshCourses(); setPage('dashboard'); setPrefilledSkill(''); }} />}
             {page === 'career' && <CareerHub token={user.token} onGenerateClick={(skill) => { setPrefilledSkill(skill); setPage('generate'); }} />}
           </motion.div>
         </AnimatePresence>

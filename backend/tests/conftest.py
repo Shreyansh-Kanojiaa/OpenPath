@@ -50,6 +50,11 @@ def create_course_with_module(client, monkeypatch):
     def _make(headers, video_duration: int = 600, video_id: str | None = "abc123"):
         monkeypatch.setattr(
             services,
+            "validate_skill",
+            lambda skill: schemas.SkillValidation(is_valid_skill=True, reason="ok"),
+        )
+        monkeypatch.setattr(
+            services,
             "generate_syllabus",
             lambda *a, **kw: schemas.CourseCreate(
                 skill_name="python",

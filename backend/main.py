@@ -1,16 +1,17 @@
 import os
 
+from dotenv import load_dotenv, find_dotenv
+
+load_dotenv(find_dotenv())
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv, find_dotenv
 from slowapi.errors import RateLimitExceeded
 from slowapi import _rate_limit_exceeded_handler
 
 import models, database
 from limiter import limiter
 from routers import auth as auth_router, courses, modules, quiz, career, analytics
-
-load_dotenv(find_dotenv())
 
 models.Base.metadata.create_all(bind=database.engine)
 

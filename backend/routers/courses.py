@@ -17,6 +17,13 @@ def generate_course(
     db: Session = Depends(database.get_db),
 ):
     """Generate an AI syllabus with best-fit YouTube videos, saved to the user's account."""
+    if not skill.strip():
+        raise HTTPException(status_code=400, detail="Please enter a skill to learn.")
+
+    validation = services.validate_skill(skill)
+    if not validation.is_valid_skill:
+        raise HTTPException(status_code=400, detail="That doesn't look like a valid skill to learn. Try something like \"Python\" or \"watercolor painting\".")
+
     course_data = services.generate_syllabus(skill, level, time, depth)
 
     new_course = models.Course(

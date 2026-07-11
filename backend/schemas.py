@@ -25,6 +25,12 @@ class ModuleResponse(BaseModel):
         from_attributes = True
 
 
+# ── Skill validation ─────────────────────────────────────────────────────────
+class SkillValidation(BaseModel):
+    is_valid_skill: bool = Field(description="True if the input names a real, learnable subject/skill; false if it is gibberish, nonsensical, empty, or not a coherent topic.")
+    reason: str = Field(description="One short sentence explaining the verdict.")
+
+
 # ── Course ────────────────────────────────────────────────────────────────────
 class CourseCreate(BaseModel):
     skill_name: str
