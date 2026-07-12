@@ -30,6 +30,10 @@ services:
   # ── FastAPI Backend ──────────────────────────────────────────────────────────
   # Default command is gunicorn (see Dockerfile). The dev overlay swaps in uvicorn --reload.
   backend:
+    # In CI/CD the image is built once and pushed to GHCR; the droplet pulls this
+    # tag instead of building. IMAGE_TAG is set to the commit SHA by the deploy
+    # workflow (falls back to :latest for local `docker compose up --build`).
+    image: ghcr.io/shreyansh-kanojiaa/openpath-backend:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: Dockerfile
@@ -51,6 +55,8 @@ services:
   # The image bakes an HTTP-only nginx config (docker/nginx.conf). The prod overlay
   # mounts docker/nginx.prod.conf over it to add TLS.
   frontend:
+    # Prebuilt in CI/CD and pulled from GHCR on the droplet (see backend note).
+    image: ghcr.io/shreyansh-kanojiaa/openpath-frontend:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: Dockerfile.frontend

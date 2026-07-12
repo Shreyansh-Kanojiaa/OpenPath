@@ -248,6 +248,10 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml exec frontend ng
 
 ## 10. Redeploy after a code change
 
+> Deploys are now **automatic** on every push to `main` — see section 13
+> (Continuous deployment). The manual steps below remain valid as a fallback or
+> for a first bring-up.
+
 From `/opt/openpath` on the droplet:
 
 ```bash
@@ -309,6 +313,83 @@ ufw enable
 ```
 
 Keep port 80 open; certificate renewal depends on it.
+
+---
+
+## 13. Continuous deployment (CI/CD)
+
+Pushing to `main` deploys to this droplet automatically. The pipeline lives in
+`.github/workflows/ci.yml`:
+
+1. **Test** — backend `pytest` and a frontend `npm run build` (these also run on PRs).
+2. **Build & push** — builds the backend and frontend Docker images and pushes them
+   to GitHub Container Registry (GHCR), each tagged with the commit SHA and `latest`.
+3. **Deploy** — SSHes into this droplet, fast-forwards `/opt/openpath` to the new
+   commit, pulls the two images by SHA, and runs `docker compose … up -d --no-build`.
+   A final step polls `https://open-path.dev` until it returns 200.
+
+Only a green test run reaches the build and deploy stages, so broken code never ships.
+The Postgres volume is never touched, and schema changes still auto-apply on backend
+startup (`migrate_db.py`).
+
+### One-time setup
+
+**a. A deploy SSH key.** On your laptop, create a keypair dedicated to CI (no
+passphrase) and authorise it on the droplet:
+
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/openpath_deploy -N "" -C "github-actions-deploy"
+ssh-copy-id -i ~/.ssh/openpath_deploy.pub root@<droplet-ip>
+# (or append ~/.ssh/openpath_deploy.pub to /root/.ssh/authorized_keys on the droplet)
+```
+
+**b. GitHub repository secrets** — Settings → Secrets and variables → Actions:
+
+| Secret | Value |
+|--------|-------|
+| `DEPLOY_HOST` | droplet public IP (e.g. `168.144.22.61`) or `open-path.dev` |
+| `DEPLOY_USER` | `root` (or your deploy user) |
+| `DEPLOY_SSH_KEY` | the **private** key: `cat ~/.ssh/openpath_deploy` |
+| `GOOGLE_CLIENT_ID` | your Google OAuth client ID (baked into the frontend bundle) |
+
+The droplet authenticates to GHCR during the deploy using the workflow's own
+`GITHUB_TOKEN`, so no registry password is stored on the server.
+
+**c. Droplet prerequisites** (already true if you followed sections 1–8):
+
+- `/opt/openpath` is a clean checkout of `main`. The deploy fast-forwards it and
+  **preserves** your local edit of `docker/nginx.prod.conf` (the real domain). Keep
+  any other server-only settings in `.env` (gitignored), not in tracked files.
+- Docker + the compose plugin are installed and `.env` is present.
+
+### First automated deploy
+
+Push a commit to `main` and watch it under the repo's **Actions** tab. The first run
+switches the droplet from locally-built images to GHCR images; every run after that
+just pulls the new tag.
+
+### Rollback
+
+Fastest — revert the bad commit and push; CI redeploys the previous good state:
+
+```bash
+git revert <bad-sha> && git push
+```
+
+Or pin the droplet to an older image by hand (every pushed commit is a tag):
+
+```bash
+cd /opt/openpath
+IMAGE_TAG=<older-sha> docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
+
+### If a deploy fails
+
+- **Tests red** → nothing was built or deployed; fix and push again.
+- **`git merge --ff-only` aborts** → `/opt/openpath` has diverging local commits or a
+  conflicting edit to a tracked file. SSH in, reconcile, re-run the job.
+- **Smoke check fails** → containers came up but the site isn't returning 200. Check
+  `docker compose … logs backend frontend` on the droplet and roll back.
 
 ---
 

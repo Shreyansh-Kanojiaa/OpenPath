@@ -1,12 +1,21 @@
-name: CI
+name: CI/CD
 
+# Pull requests: run tests + a frontend build check only (no deploy).
+# Push to main: run tests, build & push Docker images to GHCR, then deploy to prod.
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
 
+# Don't let two main-branch runs deploy at once; queue instead of cancelling so a
+# deploy in flight is never interrupted mid-way.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
+  # ── 1. Tests (every push and PR) ─────────────────────────────────────────────
   backend-tests:
     runs-on: ubuntu-latest
     steps:
@@ -27,3 +36,109 @@ jobs:
           cache: "npm"
           cache-dependency-path: react-frontend/package-lock.json
       - run: cd react-frontend && npm ci && npm run build
+
+  # ── 2. Build & push images to GHCR (main only, after tests pass) ─────────────
+  build-and-push:
+    needs: [backend-tests, frontend-build]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      # GHCR image names must be lowercase; the owner login can contain capitals.
+      - id: meta
+        run: echo "owner=$(echo '${{ github.repository_owner }}' | tr 'A-Z' 'a-z')" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ steps.meta.outputs.owner }}/openpath-backend:latest
+            ghcr.io/${{ steps.meta.outputs.owner }}/openpath-backend:${{ github.sha }}
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+
+      - name: Build & push frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.frontend
+          push: true
+          # VITE_GOOGLE_CLIENT_ID is a public value baked into the JS bundle at
+          # build time. Stored as a repo secret so it lives in one place.
+          build-args: |
+            VITE_GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+          tags: |
+            ghcr.io/${{ steps.meta.outputs.owner }}/openpath-frontend:latest
+            ghcr.io/${{ steps.meta.outputs.owner }}/openpath-frontend:${{ github.sha }}
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
+
+  # ── 3. Deploy to the droplet over SSH (main only, after images are pushed) ───
+  deploy:
+    needs: build-and-push
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          # Forward the values the remote script needs. GITHUB_TOKEN can pull the
+          # images this workflow just pushed (same repo), so the droplet needs no
+          # long-lived registry credential.
+          envs: IMAGE_TAG,GHCR_USER,GHCR_TOKEN
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd /opt/openpath
+
+            # Advance the checkout to exactly this commit (for compose files etc.),
+            # while preserving droplet-local edits to tracked files such as the real
+            # domain in docker/nginx.prod.conf. A fast-forward-only merge fails loudly
+            # rather than clobbering, so a genuine conflict aborts before touching prod.
+            git fetch --quiet origin main
+            git merge --ff-only "$IMAGE_TAG"
+
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+
+            export IMAGE_TAG
+            DC="docker compose -f docker-compose.yml -f docker-compose.prod.yml"
+            $DC pull backend frontend
+            $DC up -d --no-build
+            docker image prune -f
+            docker logout ghcr.io || true
+
+      - name: Smoke-check production is serving
+        run: |
+          for i in $(seq 1 12); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' https://open-path.dev || true)
+            echo "attempt $i: HTTP $code"
+            [ "$code" = "200" ] && exit 0
+            sleep 5
+          done
+          echo "Production did not return 200 after redeploy"; exit 1
