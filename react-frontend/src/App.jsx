@@ -363,7 +363,7 @@ function Dashboard({ courses, onSelectCourse, onNewCourse, user }) {
         {courses.map((course, i) => {
           const completed = course.modules.filter(m => m.is_completed || m.is_skipped).length
           const total = course.modules.length
-          const progress = completed / total
+          const progress = total > 0 ? completed / total : 0
           const isLarge = i === 0 || i % 7 === 0
 
           return (
@@ -784,7 +784,7 @@ function CourseView({ course, onBack, onComplete, onSaveNotes, token, user }) {
   const activeMod = mods.find(m => m.id === activeId)
   const activeIndex = mods.findIndex(m => m.id === activeId)
   const completedCount = mods.filter(m => m.is_completed || m.is_skipped).length
-  const progress = completedCount / mods.length
+  const progress = mods.length > 0 ? completedCount / mods.length : 0
   const [mode, setMode] = useState('path') // 'path' | 'lesson'
   const [tab, setTab] = useState('transcript') // 'transcript' | 'notes' | 'resources'
   const [zenMode, setZenMode] = useState(false)
@@ -1330,18 +1330,10 @@ function GeneratePage({ token, onGenerate, initialSkill = '', isGenerating, setI
 async function fetchCourses(token) {
   try {
     const res = await fetch(`${API}/courses`, { headers: { Authorization: `Bearer ${token}` } })
-    if (!res.ok) return []
+    if (!res.ok) return null
     const list = await res.json()
-    const detailed = await Promise.all(list.map(async c => {
-      try {
-        const r = await fetch(`${API}/courses/${c.id}`, { headers: { Authorization: `Bearer ${token}` } })
-        if (!r.ok) return { ...c, modules: [] }
-        const d = await r.json()
-        return { ...d.course, modules: d.modules || [] }
-      } catch { return { ...c, modules: [] } }
-    }))
-    return detailed
-  } catch { return [] }
+    return list.map(c => ({ ...c, modules: c.modules || [] }))
+  } catch { return null }
 }
 
 export default function App() {
@@ -1364,7 +1356,7 @@ export default function App() {
             setUser(userData)
             setShowLanding(false)
             const userCourses = await fetchCourses(token)
-            setCourses(userCourses)
+            if (userCourses) setCourses(userCourses)
           } else {
             localStorage.removeItem('op_token')
           }
@@ -1377,7 +1369,7 @@ export default function App() {
     setUser(userData)
     setPage('dashboard')
     const userCourses = await fetchCourses(userData.token)
-    setCourses(userCourses)
+    setCourses(userCourses ?? [])
   }
 
   const logout = () => {
@@ -1388,7 +1380,7 @@ export default function App() {
   const refreshCourses = async () => {
     if (!user?.token) return
     const userCourses = await fetchCourses(user.token)
-    setCourses(userCourses)
+    if (userCourses) setCourses(userCourses)
   }
 
   const completeModule = async (modId, type) => {

@@ -30,7 +30,7 @@ class Course(Base):
     required_resources = Column(Text, nullable=True, default=None)
 
     owner = relationship("User", back_populates="courses")
-    modules = relationship("Module", back_populates="course")
+    modules = relationship("Module", back_populates="course", order_by="Module.order_index")
 
     @validates('required_resources')
     def validate_required_resources(self, key, value):

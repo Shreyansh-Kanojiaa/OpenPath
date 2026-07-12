@@ -45,6 +45,7 @@ class CourseResponse(BaseModel):
     current_level: int
     time_commitment: str
     is_public: bool = False
+    modules: List[ModuleResponse] = []
 
     class Config:
         from_attributes = True
