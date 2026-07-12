@@ -59,9 +59,9 @@ export function LiveTutor({ moduleId, token, onClose }) {
       animate={{ x: 0 }} 
       exit={{ x: '100%' }}
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-      className="fixed right-0 top-0 bottom-0 w-[400px] z-[100] glass-card bg-surface border-l border-border flex flex-col rounded-none"
+      className="fixed right-0 top-0 bottom-0 w-full sm:w-[400px] max-w-full z-[100] glass-card bg-surface border-l border-border flex flex-col rounded-none"
     >
-      <div className="p-5 border-b border-border flex justify-between items-center">
+      <div className="p-5 pt-24 sm:pt-5 border-b border-border flex justify-between items-center">
         <div className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-accent" />
           <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-text-secondary">OpenPath Tutor</h3>

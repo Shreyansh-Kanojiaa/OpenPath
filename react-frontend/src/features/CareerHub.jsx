@@ -108,15 +108,15 @@ export function CareerHub({ token, onGenerateClick }) {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-8 py-32 w-full min-h-screen">
-      <header className="mb-16">
-        <h2 className="text-5xl font-bold font-display tracking-tight mb-4">Career Hub</h2>
-        <p className="text-xl text-slate-400 font-sans">Map your skills, calculate job readiness, and bridge the gap.</p>
+    <div className="max-w-7xl mx-auto px-5 sm:px-8 py-28 md:py-32 w-full min-h-screen">
+      <header className="mb-12 md:mb-16">
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold font-display tracking-tight mb-4">Career Hub</h2>
+        <p className="text-base sm:text-xl text-slate-400 font-sans">Map your skills, calculate job readiness, and bridge the gap.</p>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
         <div className="lg:col-span-2 space-y-8">
-          <div className="glass-card p-10 relative overflow-hidden">
+          <div className="glass-card p-6 sm:p-10 relative overflow-hidden">
             <div className="absolute top-[-20%] right-[-10%] w-[400px] h-[400px] bg-blue/5 blur-[100px] rounded-full pointer-events-none" />
             
             <h3 className="text-2xl font-bold mb-6 flex items-center gap-3">
@@ -153,7 +153,7 @@ export function CareerHub({ token, onGenerateClick }) {
 
             {result && (
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="pt-8 border-t border-white/5">
-                <div className="flex flex-col md:flex-row gap-12 items-center mb-10">
+                <div className="flex flex-col md:flex-row gap-8 md:gap-12 items-center mb-10">
                   <div className="relative w-48 h-48 flex-shrink-0">
                     <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
                       <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />

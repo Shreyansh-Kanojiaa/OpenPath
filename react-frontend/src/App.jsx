@@ -311,7 +311,7 @@ function AuthScreen({ onLogin }) {
           animate={{ opacity: 1, scale: 1 }}
           className="w-full max-w-md"
         >
-          <div className="glass-card p-10 bg-surface/50">
+          <div className="glass-card p-6 sm:p-10 bg-surface/50">
             <h2 className="text-3xl font-display tracking-tight mb-3">Welcome to OpenPath</h2>
             <p className="text-sm text-slate-400 mb-12 leading-relaxed">
               Sign in with your Google account to start building personalized learning paths.
@@ -337,29 +337,29 @@ function Dashboard({ courses, onSelectCourse, onNewCourse, user }) {
   const totalCompleted = courses.reduce((acc, c) => acc + c.modules.filter(m => m.is_completed || m.is_skipped).length, 0)
   
   return (
-    <div className="max-w-7xl mx-auto px-8 py-32 w-full min-h-screen">
-      <header className="mb-16 flex flex-col md:flex-row md:items-end justify-between gap-12">
+    <div className="max-w-7xl mx-auto px-5 sm:px-8 py-28 md:py-32 w-full min-h-screen">
+      <header className="mb-12 md:mb-16 flex flex-col md:flex-row md:items-end justify-between gap-8 md:gap-12">
         <motion.div {...FADE_UP}>
           <p className="text-sm text-slate-500 mb-3">Welcome back,</p>
-          <h2 className="text-5xl font-bold font-display tracking-tight">{user?.username}'s courses</h2>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold font-display tracking-tight">{user?.username}'s courses</h2>
         </motion.div>
-        
-        <motion.div 
-          initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} 
-          className="flex gap-12 border-l border-white/10 pl-12 py-2"
+
+        <motion.div
+          initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+          className="flex gap-10 md:gap-12 border-l border-white/10 pl-8 md:pl-12 py-2 self-start md:self-auto"
         >
           <div>
-            <div className="text-4xl font-display font-bold text-white leading-none mb-1">{courses.length}</div>
+            <div className="text-3xl sm:text-4xl font-display font-bold text-white leading-none mb-1">{courses.length}</div>
             <div className="text-xs text-slate-500">Courses</div>
           </div>
           <div>
-            <div className="text-4xl font-display font-bold text-blue leading-none mb-1">{totalCompleted}</div>
+            <div className="text-3xl sm:text-4xl font-display font-bold text-blue leading-none mb-1">{totalCompleted}</div>
             <div className="text-xs text-slate-500">Modules done</div>
           </div>
         </motion.div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-6 md:gap-8">
         {courses.map((course, i) => {
           const completed = course.modules.filter(m => m.is_completed || m.is_skipped).length
           const total = course.modules.length
@@ -377,7 +377,7 @@ function Dashboard({ courses, onSelectCourse, onNewCourse, user }) {
                 e.currentTarget.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
                 e.currentTarget.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
               }}
-              className={`glass-card p-10 flex flex-col justify-between cursor-pointer group hover:bg-white/[0.08] hover:border-white/20 hover:scale-[1.02] hover:shadow-blue-glow/20 transition-all duration-500 overflow-hidden relative ${isLarge ? 'md:col-span-2 lg:col-span-3 min-h-[420px]' : 'md:col-span-2 lg:col-span-2 min-h-[420px]'}`}
+              className={`glass-card p-6 sm:p-10 flex flex-col justify-between cursor-pointer group hover:bg-white/[0.08] hover:border-white/20 hover:scale-[1.02] hover:shadow-blue-glow/20 transition-all duration-500 overflow-hidden relative ${isLarge ? 'md:col-span-2 lg:col-span-3 min-h-[320px] sm:min-h-[420px]' : 'md:col-span-2 lg:col-span-2 min-h-[320px] sm:min-h-[420px]'}`}
             >
               <div 
                 className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none z-0" 
@@ -423,7 +423,7 @@ function Dashboard({ courses, onSelectCourse, onNewCourse, user }) {
           {...BENTO_ITEM}
           transition={{ delay: (courses.length % 8) * 0.1 }}
           onClick={onNewCourse}
-          className="md:col-span-2 lg:col-span-1 rounded-2xl border-2 border-dashed border-white/5 hover:border-blue/40 hover:bg-blue/5 transition-all flex flex-col items-center justify-center gap-8 group cursor-pointer min-h-[420px]"
+          className="md:col-span-2 lg:col-span-1 rounded-2xl border-2 border-dashed border-white/5 hover:border-blue/40 hover:bg-blue/5 transition-all flex flex-col items-center justify-center gap-8 group cursor-pointer min-h-[200px] sm:min-h-[420px]"
         >
           <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-slate-500 group-hover:text-cyan group-hover:scale-105 group-hover:bg-blue/10 transition-all duration-500">
             <IcoPlus />
@@ -666,94 +666,111 @@ function WatchGatedVideo({ mod, onComplete, token }) {
 
   const isCompleted = mod.is_completed || mod.is_skipped
 
-  return (
-    <div className="aspect-video w-full rounded-[40px] overflow-hidden border border-white/5 shadow-2xl relative bg-black shadow-blue-glow/5 group">
-      {mod.video_id ? (
-        <>
-          <iframe
-            ref={iframeRef}
-            width="100%" height="100%"
-            src={`https://www.youtube.com/embed/${mod.video_id}?enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`}
-            title={mod.title} frameBorder="0" allowFullScreen
-            allow="autoplay; encrypted-media"
+  // Shared HUD row — reused by the desktop overlay and the mobile below-video bar.
+  const hudRow = (
+    <div className="flex items-center gap-3 sm:gap-6">
+      {/* Progress ring */}
+      <div className="relative w-11 h-11 sm:w-14 sm:h-14 flex-shrink-0">
+        <svg viewBox="0 0 44 44" className="w-full h-full -rotate-90">
+          <circle cx="22" cy="22" r="19" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3" />
+          <motion.circle
+            cx="22" cy="22" r="19" fill="none"
+            stroke={canComplete ? '#c9a96e' : '#7aa2f7'}
+            strokeWidth="3"
+            strokeLinecap="square"
+            strokeDasharray={2 * Math.PI * 19}
+            strokeDashoffset={2 * Math.PI * 19 * (1 - pct)}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
           />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center text-[10px] font-mono font-bold text-white">
+          {Math.round(pct * 100)}%
+        </div>
+      </div>
 
-          {/* ── Watch-time HUD overlay ── */}
-          {!isCompleted && (
-            <div className="absolute bottom-0 left-0 right-0 z-10 pointer-events-none">
-              {/* gradient fade from transparent to dark */}
-              <div className="h-32 bg-black/80" />
-              <div className="bg-black/80 px-10 pb-8 -mt-px pointer-events-auto border-t border-white/5">
-                <div className="flex items-center gap-6">
-                  {/* Progress ring */}
-                  <div className="relative w-14 h-14 flex-shrink-0">
-                    <svg viewBox="0 0 44 44" className="w-full h-full -rotate-90">
-                      <circle cx="22" cy="22" r="19" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3" />
-                      <motion.circle
-                        cx="22" cy="22" r="19" fill="none"
-                        stroke={canComplete ? '#c9a96e' : '#7aa2f7'}
-                        strokeWidth="3"
-                        strokeLinecap="square"
-                        strokeDasharray={2 * Math.PI * 19}
-                        strokeDashoffset={2 * Math.PI * 19 * (1 - pct)}
-                        transition={{ duration: 0.4, ease: 'easeOut' }}
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center text-[10px] font-mono font-bold text-white">
-                      {Math.round(pct * 100)}%
-                    </div>
-                  </div>
+      {/* Status text */}
+      <div className="flex-1 min-w-0">
+        <div className="text-[10px] sm:text-[11px] font-mono uppercase tracking-[0.15em] text-slate-400 mb-1">
+          {canComplete
+            ? '✓ Watch requirement met'
+            : ytPlaying && userActive
+              ? 'Tracking watch time…'
+              : !ytPlaying
+                ? 'Play the video to start tracking'
+                : 'Move your mouse to confirm presence'}
+        </div>
+        <div className="text-[10px] font-mono text-slate-600">
+          {fmtTime(watchedSecs)} watched · {fmtTime(Math.ceil(videoDuration * REQUIRED_RATIO))} required
+        </div>
+      </div>
 
-                  {/* Status text */}
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[11px] font-mono uppercase tracking-[0.15em] text-slate-400 mb-1">
-                      {canComplete
-                        ? '✓ Watch requirement met'
-                        : ytPlaying && userActive
-                          ? 'Tracking watch time…'
-                          : !ytPlaying
-                            ? 'Play the video to start tracking'
-                            : 'Move your mouse to confirm presence'}
-                    </div>
-                    <div className="text-[10px] font-mono text-slate-600">
-                      {fmtTime(watchedSecs)} watched · {fmtTime(Math.ceil(videoDuration * REQUIRED_RATIO))} required
-                    </div>
-                  </div>
+      {/* Activity indicators */}
+      <div className="hidden sm:flex items-center gap-3 flex-shrink-0">
+        <div className="flex items-center gap-1.5" title={ytPlaying ? 'Video playing' : 'Video paused'}>
+          <div className={`w-2 h-2 rounded-2xl transition-colors duration-300 ${ytPlaying ? 'bg-mastered animate-pulse' : 'bg-slate-600'}`} />
+          <span className="text-[9px] font-mono uppercase text-slate-500">{ytPlaying ? 'Playing' : 'Paused'}</span>
+        </div>
+        <div className="w-px h-4 bg-white/10" />
+        <div className="flex items-center gap-1.5" title={userActive ? 'User active' : 'User idle — watching paused'}>
+          <div className={`w-2 h-2 rounded-2xl transition-colors duration-300 ${userActive ? 'bg-cyan animate-pulse' : 'bg-slate-600'}`} />
+          <span className="text-[9px] font-mono uppercase text-slate-500">{userActive ? 'Active' : 'Idle'}</span>
+        </div>
+      </div>
 
-                  {/* Activity indicators */}
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    <div className="flex items-center gap-1.5" title={ytPlaying ? 'Video playing' : 'Video paused'}>
-                      <div className={`w-2 h-2 rounded-2xl transition-colors duration-300 ${ytPlaying ? 'bg-mastered animate-pulse' : 'bg-slate-600'}`} />
-                      <span className="text-[9px] font-mono uppercase text-slate-500">{ytPlaying ? 'Playing' : 'Paused'}</span>
-                    </div>
-                    <div className="w-px h-4 bg-white/10" />
-                    <div className="flex items-center gap-1.5" title={userActive ? 'User active' : 'User idle — watching paused'}>
-                      <div className={`w-2 h-2 rounded-2xl transition-colors duration-300 ${userActive ? 'bg-cyan animate-pulse' : 'bg-slate-600'}`} />
-                      <span className="text-[9px] font-mono uppercase text-slate-500">{userActive ? 'Active' : 'Idle'}</span>
-                    </div>
-                  </div>
+      {/* Complete button — pointer-events-auto only when actionable, so an
+          un-met overlay lets play/scrub clicks fall through to the video. */}
+      <button
+        disabled={!canComplete}
+        onClick={handleComplete}
+        className={`flex-shrink-0 px-5 sm:px-8 py-3 rounded-full text-xs sm:text-sm font-bold uppercase tracking-wider transition-all duration-300 ${
+          canComplete
+            ? 'pointer-events-auto bg-mastered text-black hover:shadow-blue-glow-sm hover:scale-[1.03] cursor-pointer'
+            : 'pointer-events-none bg-white/5 text-slate-600 cursor-not-allowed'
+        }`}
+      >
+        {canComplete ? 'Mark complete' : 'Keep watching'}
+      </button>
+    </div>
+  )
 
-                  {/* Complete button */}
-                  <button
-                    disabled={!canComplete}
-                    onClick={handleComplete}
-                    className={`flex-shrink-0 px-8 py-3 rounded-full text-sm font-bold uppercase tracking-wider transition-all duration-300 ${
-                      canComplete
-                        ? 'bg-mastered text-black hover:shadow-blue-glow-sm hover:scale-[1.03] cursor-pointer'
-                        : 'bg-white/5 text-slate-600 cursor-not-allowed'
-                    }`}
-                  >
-                    {canComplete ? 'Mark complete' : 'Keep watching'}
-                  </button>
+  return (
+    <div>
+      <div className="aspect-video w-full rounded-2xl sm:rounded-[40px] overflow-hidden border border-white/5 shadow-2xl relative bg-black shadow-blue-glow/5 group">
+        {mod.video_id ? (
+          <>
+            <iframe
+              ref={iframeRef}
+              width="100%" height="100%"
+              src={`https://www.youtube.com/embed/${mod.video_id}?enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`}
+              title={mod.title} frameBorder="0" allowFullScreen
+              allow="autoplay; encrypted-media"
+            />
+
+            {/* Desktop/tablet: HUD overlaid on the video. The container is
+                pointer-events-none (only the actionable button re-enables them),
+                so clicking the video's play/controls always works. Hidden on
+                mobile, where the HUD renders below the video instead. */}
+            {!isCompleted && (
+              <div className="hidden sm:block absolute bottom-0 left-0 right-0 z-10 pointer-events-none">
+                <div className="h-16 sm:h-24 bg-gradient-to-t from-black/85 to-transparent" />
+                <div className="bg-black/80 px-4 sm:px-10 pb-5 sm:pb-8 -mt-px border-t border-white/5">
+                  {hudRow}
                 </div>
               </div>
-            </div>
-          )}
-        </>
-      ) : (
-        <div className="w-full h-full glass-card flex items-center justify-center flex-col gap-6 text-slate-600 bg-surface">
-          <motion.div animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: 'linear' }} className="w-20 h-20 rounded-2xl border border-dashed border-white/20 flex items-center justify-center opacity-30"><IcoCompass /></motion.div>
-          <p className="font-mono text-xs uppercase tracking-[0.4em]">Loading video...</p>
+            )}
+          </>
+        ) : (
+          <div className="w-full h-full glass-card flex items-center justify-center flex-col gap-6 text-slate-600 bg-surface">
+            <motion.div animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: 'linear' }} className="w-20 h-20 rounded-2xl border border-dashed border-white/20 flex items-center justify-center opacity-30"><IcoCompass /></motion.div>
+            <p className="font-mono text-xs uppercase tracking-[0.4em]">Loading video...</p>
+          </div>
+        )}
+      </div>
+
+      {/* Mobile: HUD sits below the video so it never covers the play button. */}
+      {!isCompleted && mod.video_id && (
+        <div className="sm:hidden mt-3 bg-surface border border-white/5 rounded-2xl px-4 py-3">
+          {hudRow}
         </div>
       )}
     </div>
@@ -787,7 +804,7 @@ function CourseView({ course, onBack, onComplete, onSaveNotes, token, user }) {
   return (
     <div className={`flex w-full overflow-hidden ${zenMode ? 'fixed inset-0 z-50 pt-0 h-screen' : 'h-screen pt-24'}`}>
       {mode === 'path' && !zenMode && (
-        <aside className="w-64 border-r border-white/5 flex flex-col bg-surface/40 backdrop-blur-3xl relative z-20 flex-shrink-0">
+        <aside className="hidden lg:flex w-64 border-r border-white/5 flex-col bg-surface/40 backdrop-blur-3xl relative z-20 flex-shrink-0">
           <div className="p-6 border-b border-white/5">
             <button onClick={onBack} className="flex items-center gap-2 text-slate-500 hover:text-white transition-all text-sm mb-6 group">
               <span className="group-hover:-translate-x-1 transition-transform duration-300"><IcoBack /></span> Back
@@ -839,7 +856,10 @@ function CourseView({ course, onBack, onComplete, onSaveNotes, token, user }) {
             exit={{ opacity: 0, y: -10 }}
             className="flex-1 overflow-y-auto custom-scrollbar"
           >
-            <div className="max-w-5xl mx-auto p-10 lg:p-16">
+            <div className="max-w-5xl mx-auto p-5 sm:p-10 lg:p-16">
+              <button onClick={onBack} className="lg:hidden flex items-center gap-2 text-slate-500 hover:text-white transition-all text-sm mb-6 group">
+                <span className="group-hover:-translate-x-1 transition-transform duration-300"><IcoBack /></span> Back to courses
+              </button>
               <div className="flex items-start justify-between gap-8 mb-12 flex-wrap">
                 <div>
                   <div className="text-[11px] font-mono uppercase tracking-[0.25em] text-cyan mb-3">Your path</div>
@@ -912,7 +932,7 @@ function CourseView({ course, onBack, onComplete, onSaveNotes, token, user }) {
             className="flex-1 flex overflow-hidden"
           >
             <div className="flex-1 overflow-y-auto custom-scrollbar">
-              <div className="max-w-4xl mx-auto p-10 lg:p-14">
+              <div className="max-w-4xl mx-auto p-5 sm:p-10 lg:p-14">
                 <div className="flex items-center justify-between gap-4 mb-8 flex-wrap">
                   <button onClick={() => setMode('path')} className="flex items-center gap-2 text-slate-500 hover:text-white transition-all text-sm group">
                     <span className="group-hover:-translate-x-1 transition-transform duration-300"><IcoBack /></span>
@@ -979,7 +999,7 @@ function CourseView({ course, onBack, onComplete, onSaveNotes, token, user }) {
             </div>
 
             {!zenMode && (
-              <aside className="w-80 border-l border-white/5 flex flex-col bg-surface/40 backdrop-blur-3xl p-6 overflow-y-auto custom-scrollbar flex-shrink-0">
+              <aside className="hidden lg:flex w-80 border-l border-white/5 flex-col bg-surface/40 backdrop-blur-3xl p-6 overflow-y-auto custom-scrollbar flex-shrink-0">
                 <div className="text-[11px] font-mono uppercase tracking-[0.2em] text-slate-500 mb-4">Up next in module</div>
                 <div className="space-y-2">
                   {mods.map((m, i) => {
@@ -1066,8 +1086,8 @@ function DiscoverPage({ token, onEnroll }) {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-8 py-32 w-full min-h-screen">
-      <header className="mb-16 px-4">
+    <div className="max-w-7xl mx-auto px-5 sm:px-8 py-28 md:py-32 w-full min-h-screen">
+      <header className="mb-12 md:mb-16 px-4">
         <motion.div {...FADE_UP}>
           <Badge>Community</Badge>
           <h1 className="text-4xl font-bold mt-4 font-display tracking-tight leading-none">Discover courses</h1>
@@ -1196,7 +1216,7 @@ function GeneratePage({ token, onGenerate, initialSkill = '', isGenerating, setI
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-8 py-24 w-full min-h-screen">
+    <div className="max-w-2xl mx-auto px-5 sm:px-8 py-24 w-full min-h-screen">
       <motion.div {...FADE_UP} className="w-full">
         <div className="mb-10">
           <h1 className="text-4xl font-bold font-display mb-3 leading-tight tracking-tight">Generate a course</h1>
@@ -1258,7 +1278,7 @@ function GeneratePage({ token, onGenerate, initialSkill = '', isGenerating, setI
           {/* Course depth */}
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-slate-300">Course depth</label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {DEPTH_OPTIONS.map(d => (
                 <button
                   key={d.value}
