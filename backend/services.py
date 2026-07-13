@@ -722,6 +722,21 @@ def generate_offline_notes(video_id: str, module_topic: str) -> str:
 # JOB READY CALCULATOR
 # ─────────────────────────────────────────────────────────────────────────────
 
+def dedupe_skills_case_insensitive(skills: list[str]) -> list[str]:
+    """Trim, drop empties, and dedupe skills case-insensitively (first-seen casing wins)."""
+    deduped = []
+    seen = set()
+    for skill in skills:
+        skill = skill.strip()
+        if not skill:
+            continue
+        key = skill.lower()
+        if key not in seen:
+            seen.add(key)
+            deduped.append(skill)
+    return deduped
+
+
 def calculate_job_readiness(job_title: str, company: str, user_completed_skills: list[str]) -> schemas.JobReadyResponse:
     """Calculate job readiness percentage and missing skills using Gemini."""
     if not os.environ.get("GEMINI_API_KEY"):

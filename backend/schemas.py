@@ -118,6 +118,32 @@ class UserResponse(BaseModel):
         from_attributes = True
 
 
+# ── Account Settings ────────────────────────────────────────────────────────
+class AccountSettingsResponse(BaseModel):
+    username: str
+    email: Optional[str] = None
+    known_skills: List[str] = []
+    can_change_username: bool
+    next_username_change_allowed_at: Optional[datetime.datetime] = None
+
+
+class UsernameUpdateRequest(BaseModel):
+    username: str
+
+
+class UsernameUpdateResponse(BaseModel):
+    username: str
+    next_username_change_allowed_at: datetime.datetime
+
+
+class SkillsUpdateRequest(BaseModel):
+    skills: List[str]
+
+
+class SkillsUpdateResponse(BaseModel):
+    known_skills: List[str]
+
+
 # ── Notes ─────────────────────────────────────────────────────────────────────
 class NoteUpdate(BaseModel):
     notes: str
@@ -169,4 +195,13 @@ class ProgressResponse(BaseModel):
     modules_completed: int
     completion_rate: float
     last_completed_at: Optional[datetime.datetime] = None
+
+
+class ActivityDay(BaseModel):
+    date: str  # "YYYY-MM-DD"
+    count: int
+
+
+class ActivityResponse(BaseModel):
+    days: List[ActivityDay]
 

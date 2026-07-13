@@ -11,6 +11,8 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=True)
     google_sub = Column(String, unique=True, index=True, nullable=True)  # Google account subject id
     hashed_password = Column(String, nullable=True)  # legacy/unused — retained to avoid a destructive migration
+    last_username_change_at = Column(DateTime, nullable=True, default=None)
+    known_skills = Column(Text, nullable=True, default=None)  # JSON-encoded list[str]
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     courses = relationship("Course", back_populates="owner")

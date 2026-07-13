@@ -78,7 +78,7 @@ function SkillGraph({ token }) {
   );
 }
 
-export function CareerHub({ token, onGenerateClick }) {
+export function CareerHub({ token, onGenerateClick, onManageSkillsClick }) {
   const [jobTitle, setJobTitle] = useState('');
   const [company, setCompany] = useState('');
   const [loading, setLoading] = useState(false);
@@ -87,7 +87,7 @@ export function CareerHub({ token, onGenerateClick }) {
   const calculateReadiness = async (e) => {
     e.preventDefault();
     if (!jobTitle) return;
-    
+
     setLoading(true);
     try {
       const res = await fetch(`${API}/career/job-ready`, {
@@ -141,8 +141,19 @@ export function CareerHub({ token, onGenerateClick }) {
                   className="w-full bg-white/5 border border-white/10 rounded px-4 py-3 text-sm focus:border-blue/50 focus:ring-1 focus:ring-blue/20 transition-all"
                 />
               </div>
+              {onManageSkillsClick && (
+                <div className="md:col-span-2">
+                  <button
+                    type="button"
+                    onClick={onManageSkillsClick}
+                    className="text-xs text-slate-400 hover:text-cyan transition-colors underline underline-offset-2"
+                  >
+                    Manage skills you already know in Account Settings →
+                  </button>
+                </div>
+              )}
               <div className="md:col-span-2">
-                <button 
+                <button
                   type="submit" disabled={loading}
                   className="w-full py-4 bg-blue text-charcoal-900 font-bold uppercase tracking-widest text-sm rounded hover:shadow-blue-glow transition-all disabled:opacity-50"
                 >

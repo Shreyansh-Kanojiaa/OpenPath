@@ -4,6 +4,7 @@ import LandingPage from './LandingPage'
 import { LiveTutor } from './features/LiveTutor'
 import { OfflineNotesButton } from './features/OfflineNotes'
 import { CareerHub } from './features/CareerHub'
+import { AccountSettings } from './features/AccountSettings'
 import DotGrid from './components/DotGrid'
 import { Bot, Maximize2, Minimize2, MessageCircle, Loader2 } from 'lucide-react'
 // ─────────────────────────────────────────────────────────────────────────────
@@ -181,6 +182,7 @@ function NavPill({ active, setPage, user, onLogout }) {
     { id: 'discover', label: 'Discover', icon: <IcoCompass /> },
     { id: 'generate', label: 'Generate', icon: <IcoPlus /> },
     { id: 'career', label: 'Career', icon: <Icon><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></Icon> },
+    { id: 'account', label: 'Account', icon: <IcoUser /> },
   ]
 
   return (
@@ -223,7 +225,12 @@ function NavPill({ active, setPage, user, onLogout }) {
               >
                 <div className="px-3 py-2 mb-2 border-b border-white/5">
                   <div className="text-[10px] text-slate-500 mb-1">Account</div>
-                  <div className="text-sm font-semibold truncate">{user?.username}</div>
+                  <button
+                    onClick={() => { setPage('account'); setShowUser(false) }}
+                    className="text-sm font-semibold truncate hover:text-blue transition-colors text-left w-full"
+                  >
+                    {user?.username}
+                  </button>
                 </div>
                 <button 
                   onClick={onLogout}
@@ -1452,7 +1459,8 @@ export default function App() {
             )}
             {page === 'discover' && <DiscoverPage token={user.token} onEnroll={async () => { await refreshCourses(); setPage('dashboard') }} />}
             {page === 'generate' && <GeneratePage key={prefilledSkill} token={user.token} initialSkill={prefilledSkill} isGenerating={isGenerating} setIsGenerating={setIsGenerating} onGenerate={() => { refreshCourses(); setPage('dashboard'); setPrefilledSkill(''); }} />}
-            {page === 'career' && <CareerHub token={user.token} onGenerateClick={(skill) => { setPrefilledSkill(skill); setPage('generate'); }} />}
+            {page === 'career' && <CareerHub token={user.token} onGenerateClick={(skill) => { setPrefilledSkill(skill); setPage('generate'); }} onManageSkillsClick={() => setPage('account')} />}
+            {page === 'account' && <AccountSettings token={user.token} />}
           </motion.div>
         </AnimatePresence>
       </main>

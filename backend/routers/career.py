@@ -1,3 +1,5 @@
+import json
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -51,7 +53,10 @@ def check_job_readiness(
     courses = db.query(models.Course).filter(models.Course.user_id == current_user.id).all()
     completed_skills = [c.skill_name for c in courses if any(m.is_completed for m in c.modules)]
 
-    return services.calculate_job_readiness(request.job_title, request.company, completed_skills)
+    known_skills = json.loads(current_user.known_skills or "[]")
+    merged_skills = services.dedupe_skills_case_insensitive(completed_skills + known_skills)
+
+    return services.calculate_job_readiness(request.job_title, request.company, merged_skills)
 
 
 @router.get("/career/skill-graph")

@@ -45,3 +45,57 @@ def test_progress_completed_at_not_overwritten_on_recomplete(client, registered_
     second = client.get("/users/me/progress", headers=registered_user["headers"]).json()
 
     assert first["last_completed_at"] == second["last_completed_at"]
+
+
+def test_activity_empty_for_new_user(client, registered_user):
+    resp = client.get("/users/me/activity", headers=registered_user["headers"])
+    assert resp.status_code == 200
+    assert resp.json()["days"] == []
+
+
+def test_activity_reflects_completed_module(client, registered_user, create_course_with_module):
+    import datetime
+
+    _, module = create_course_with_module(registered_user["headers"], video_duration=600)
+    client.post(
+        f"/modules/{module['id']}/complete",
+        json={"watch_time": 600},
+        headers=registered_user["headers"],
+    )
+
+    resp = client.get("/users/me/activity", headers=registered_user["headers"])
+    days = resp.json()["days"]
+    assert len(days) == 1
+    assert days[0]["count"] == 1
+    assert days[0]["date"] == datetime.datetime.utcnow().date().isoformat()
+
+
+def test_activity_combines_module_completion_and_passed_quiz_same_day(client, registered_user, create_course_with_module):
+    _, module = create_course_with_module(registered_user["headers"], video_duration=600)
+    client.post(
+        f"/modules/{module['id']}/complete",
+        json={"watch_time": 600},
+        headers=registered_user["headers"],
+    )
+    client.post(
+        "/submit-quiz",
+        params={"module_id": module["id"], "score": 4},
+        headers=registered_user["headers"],
+    )
+
+    resp = client.get("/users/me/activity", headers=registered_user["headers"])
+    days = resp.json()["days"]
+    assert len(days) == 1
+    assert days[0]["count"] == 2
+
+
+def test_activity_excludes_failed_quiz_attempts(client, registered_user, create_course_with_module):
+    _, module = create_course_with_module(registered_user["headers"], video_duration=600)
+    client.post(
+        "/submit-quiz",
+        params={"module_id": module["id"], "score": 1},
+        headers=registered_user["headers"],
+    )
+
+    resp = client.get("/users/me/activity", headers=registered_user["headers"])
+    assert resp.json()["days"] == []

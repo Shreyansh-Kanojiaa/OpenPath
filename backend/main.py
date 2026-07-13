@@ -11,7 +11,7 @@ from slowapi import _rate_limit_exceeded_handler
 
 import models, database
 from limiter import limiter
-from routers import auth as auth_router, courses, modules, quiz, career, analytics
+from routers import auth as auth_router, courses, modules, quiz, career, analytics, account
 
 models.Base.metadata.create_all(bind=database.engine)
 
@@ -52,3 +52,4 @@ app.include_router(modules.router)
 app.include_router(quiz.router)
 app.include_router(career.router)
 app.include_router(analytics.router)
+app.include_router(account.router)

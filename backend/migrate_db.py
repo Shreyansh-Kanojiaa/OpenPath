@@ -14,6 +14,8 @@ from sqlalchemy import text, inspect
 MIGRATIONS = {
     "users": [
         ("google_sub", "VARCHAR DEFAULT NULL"),
+        ("last_username_change_at", "TIMESTAMP DEFAULT NULL"),
+        ("known_skills", "TEXT DEFAULT NULL"),
     ],
     "courses": [
         ("project_prompt", "TEXT DEFAULT NULL"),
