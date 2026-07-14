@@ -215,6 +215,7 @@ The FastAPI backend exposes the following primary endpoints. You can explore sta
 | **PATCH** | `/courses/{id}/visibility` | Toggle a path's public/private status | Yes |
 | **POST** | `/courses/{id}/enroll` | Clone a public community course to a user's dashboard | Yes |
 | **POST** | `/modules/{id}/complete` | Mark module complete (verifies active video watch time) | Yes |
+| **POST** | `/modules/{id}/retry-video` | Re-run video search for a module that has no video yet | Yes |
 | **PATCH** | `/modules/{id}/notes` | Update rich text learning notes for a module | Yes |
 | **GET** | `/modules/{id}/flashcards` | Generate AI-extracted flashcards from video transcript | Yes |
 | **GET** | `/modules/{id}/has-transcript` | Check if video has transcript for AI capabilities | No |
