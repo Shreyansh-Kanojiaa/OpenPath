@@ -1,4 +1,5 @@
 import os
+import time
 import functools
 from google import genai
 from google.genai import types
@@ -95,16 +96,28 @@ def _cached_syllabus(skill: str, level: int, time: str, depth: str) -> str:
     """
 
     client = genai.Client()
-    response = client.models.generate_content(
-        model="gemini-flash-latest",
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json",
-            response_schema=schemas.CourseCreate,
-            temperature=0.7,
-        ),
-    )
-    return response.text
+
+    # A single transient error (rate limit, network blip) would otherwise permanently
+    # commit this course to the generic mock template below — retry once before giving up.
+    last_error = None
+    for attempt in range(2):
+        try:
+            response = client.models.generate_content(
+                model="gemini-flash-latest",
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    response_schema=schemas.CourseCreate,
+                    temperature=0.7,
+                ),
+            )
+            return response.text
+        except Exception as e:
+            last_error = e
+            if attempt == 0:
+                print(f"Gemini syllabus call failed (attempt 1/2), retrying: {e}")
+                time.sleep(2)
+    raise last_error
 
 
 def generate_syllabus(skill: str, level: int, time: str, depth: str = "Standard (5 modules)") -> schemas.CourseCreate:
@@ -226,9 +239,14 @@ def parse_time_ago(time_text):
 
 def rank_video(video: dict, query: str, depth: str = "",
                module_title: str = "", module_description: str = "",
-               skill_name: str = "") -> float:
+               skill_name: str = "", strict_relevance: bool = True) -> float:
     """
     Score a video for relevance.  Returns -100 for hard-rejected videos.
+
+    strict_relevance=False keeps the duration/language/clickbait hard gates but skips
+    the keyword-overlap relevance gate — used as a last-resort pass in find_best_video
+    when no candidate anywhere matched the module's specific sub-topic, so a generic
+    but on-skill video can still be picked over leaving the module with nothing.
     """
     # ── Duration gate ──
     duration_str = str(video.get("duration", "0:00"))
@@ -283,7 +301,7 @@ def rank_video(video: dict, query: str, depth: str = "",
             phrase_bonus += 0.3
             
         forward_ratio = len(forward_matches) / len(all_context_keywords) if all_context_keywords else 0
-        if forward_ratio < 0.15 and phrase_bonus < 0.3:
+        if strict_relevance and forward_ratio < 0.15 and phrase_bonus < 0.3:
             return -100.0
             
         # Semantic skill anchoring penalty if missing
@@ -299,7 +317,7 @@ def rank_video(video: dict, query: str, depth: str = "",
 
     score = relevance * 0.50
 
-    if relevance < 0.25:
+    if strict_relevance and relevance < 0.25:
         return -100.0
 
     # ── Educational intent detection ──
@@ -443,6 +461,7 @@ def find_best_video(query: str, exclude_ids: set = None, depth: str = "",
     from youtube_search import YoutubeSearch
 
     all_candidates = []
+    all_raw_results = {}  # id -> video dict, across every strategy — used by the relaxed last-resort pass below
 
     for strategy_idx, search_query in enumerate(search_strategies):
         try:
@@ -454,15 +473,18 @@ def find_best_video(query: str, exclude_ids: set = None, depth: str = "",
             if not results:
                 continue
 
+            for v in results:
+                all_raw_results.setdefault(v.get("id"), v)
+
             scored = [
                 (v, rank_video(v, query, depth, module_title, module_description, skill_name))
                 for v in results
             ]
             valid = [(v, s) for v, s in scored if s > -20]
-            
+
             for v, s in valid:
                 all_candidates.append({"video": v, "score": s})
-                
+
             # Early exit if we found exceptionally good matches
             if any(s > 0.8 for _, s in valid):
                 break
@@ -472,8 +494,24 @@ def find_best_video(query: str, exclude_ids: set = None, depth: str = "",
             continue
 
     if not all_candidates:
-        print(f"  [video] ALL strategies exhausted for module '{module_title}' — no video found.")
-        return None
+        # Nothing matched the module's specific sub-topic closely enough. Rather than leave the
+        # module with no video at all, fall back to the best candidate that still clears the hard
+        # gates (duration/language/not-clickbait) across everything already fetched above — a
+        # generic-but-on-skill video beats a permanently empty module.
+        relaxed_scored = [
+            (v, rank_video(v, query, depth, module_title, module_description, skill_name, strict_relevance=False))
+            for v in all_raw_results.values()
+        ]
+        relaxed_valid = [(v, s) for v, s in relaxed_scored if s > -20]
+        if not relaxed_valid:
+            print(f"  [video] ALL strategies exhausted for module '{module_title}' — no video found.")
+            return None
+
+        best_video, _ = max(relaxed_valid, key=lambda item: item[1])
+        duration = get_video_seconds(best_video)
+        channel = best_video.get("channel", "?")
+        print(f"  [video] no topical match for '{module_title}' — relaxed fallback -> [{channel}] {best_video.get('title', '?')[:60]}")
+        return {"id": best_video.get("id"), "duration": duration}
 
     # Deduplicate candidates
     unique_candidates = {}

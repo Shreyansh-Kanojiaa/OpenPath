@@ -15,6 +15,11 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# Unbuffer stdout/stderr so print() output (Gemini/YouTube fallback diagnostics, etc.)
+# reaches `docker compose logs` immediately instead of sitting in Python's block
+# buffer, which applies whenever stdout isn't a TTY (i.e. always, under gunicorn).
+ENV PYTHONUNBUFFERED=1
+
 # Bring in the installed packages only (default prefix is /usr/local).
 COPY --from=builder /install /usr/local
 
