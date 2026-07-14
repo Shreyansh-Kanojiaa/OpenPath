@@ -34,6 +34,41 @@ def complete_module(
     return {"status": "success", "module_id": module_id}
 
 
+@router.post("/modules/{module_id}/retry-video")
+def retry_video(
+    module_id: int,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    """Re-run the YouTube search for a module whose initial video assignment came back empty."""
+    module = db.query(models.Module).filter(models.Module.id == module_id).first()
+    if not module:
+        raise HTTPException(status_code=404, detail="Module not found.")
+
+    course = db.query(models.Course).filter(models.Course.id == module.course_id).first()
+    if not course or course.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied.")
+
+    if module.video_id:
+        return {"video_id": module.video_id, "video_duration": module.video_duration}
+
+    used_videos = {m.video_id for m in course.modules if m.video_id}
+    best_video_data = services.find_best_video(
+        module.search_query,
+        exclude_ids=used_videos,
+        module_title=module.title,
+        module_description=module.description,
+        skill_name=course.skill_name,
+    )
+    if not best_video_data:
+        raise HTTPException(status_code=404, detail="No suitable video found. Please try again shortly.")
+
+    module.video_id = best_video_data["id"]
+    module.video_duration = best_video_data["duration"]
+    db.commit()
+    return {"video_id": module.video_id, "video_duration": module.video_duration}
+
+
 @router.patch("/modules/{module_id}/notes")
 def save_notes(
     module_id: int,

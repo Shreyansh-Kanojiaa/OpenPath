@@ -562,7 +562,7 @@ function SkipQuizPanel({ mod, token, onSkip }) {
 // Only unlocks completion after 80% of the video has been actively watched.
 // ────────────────────────────────────────────────────────────────────────────
 
-function WatchGatedVideo({ mod, onComplete, token }) {
+function WatchGatedVideo({ mod, onComplete, onVideoFound, token }) {
   const iframeRef = useRef(null)
   const [ytPlaying, setYtPlaying] = useState(false)       // YouTube player state
   const [watchedSecs, setWatchedSecs] = useState(0)        // accumulated active watch seconds
@@ -574,6 +574,36 @@ function WatchGatedVideo({ mod, onComplete, token }) {
   const REQUIRED_RATIO = 0.80
 
   const videoDuration = mod.video_duration || 600
+
+  // ── Video assignment can fail at course-creation time (search/quota hiccup),
+  // leaving mod.video_id null forever with nothing to retry it. Auto-retry once
+  // per module when it's missing, then fall back to a manual button on failure. ──
+  const [videoRetryState, setVideoRetryState] = useState('idle') // 'idle' | 'searching' | 'failed'
+  const triedModRef = useRef(null)
+
+  const attemptVideoRetry = async () => {
+    setVideoRetryState('searching')
+    try {
+      const res = await fetch(`${API}/modules/${mod.id}/retry-video`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) throw new Error('no video found')
+      const data = await res.json()
+      onVideoFound?.(mod.id, data)
+      setVideoRetryState('idle')
+    } catch (_) {
+      setVideoRetryState('failed')
+    }
+  }
+
+  useEffect(() => {
+    if (mod.video_id) return
+    if (triedModRef.current === mod.id) return
+    triedModRef.current = mod.id
+    attemptVideoRetry()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mod.id, mod.video_id])
 
   // ── YouTube postMessage listener ──
   useEffect(() => {
@@ -769,7 +799,19 @@ function WatchGatedVideo({ mod, onComplete, token }) {
         ) : (
           <div className="w-full h-full glass-card flex items-center justify-center flex-col gap-6 text-slate-600 bg-surface">
             <motion.div animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: 'linear' }} className="w-20 h-20 rounded-2xl border border-dashed border-white/20 flex items-center justify-center opacity-30"><IcoCompass /></motion.div>
-            <p className="font-mono text-xs uppercase tracking-[0.4em]">Loading video...</p>
+            {videoRetryState === 'failed' ? (
+              <div className="flex flex-col items-center gap-4">
+                <p className="font-mono text-xs uppercase tracking-[0.4em] text-center px-6">No video found for this lesson yet</p>
+                <button
+                  onClick={attemptVideoRetry}
+                  className="px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider bg-white/5 hover:bg-white/10 border border-white/10 transition-all cursor-pointer"
+                >
+                  Try again
+                </button>
+              </div>
+            ) : (
+              <p className="font-mono text-xs uppercase tracking-[0.4em]">Finding a video...</p>
+            )}
           </div>
         )}
       </div>
@@ -784,7 +826,7 @@ function WatchGatedVideo({ mod, onComplete, token }) {
   )
 }
 
-function CourseView({ course, onBack, onComplete, onSaveNotes, token, user }) {
+function CourseView({ course, onBack, onComplete, onSaveNotes, onVideoFound, token, user }) {
   const mods = course.modules
   const initMod = mods.find(m => !m.is_completed && !m.is_skipped) || mods[0]
   const [activeId, setActiveId] = useState(initMod?.id)
@@ -957,7 +999,7 @@ function CourseView({ course, onBack, onComplete, onSaveNotes, token, user }) {
                   </div>
                 </div>
 
-                <WatchGatedVideo mod={activeMod} onComplete={onComplete} token={token} />
+                <WatchGatedVideo mod={activeMod} onComplete={onComplete} onVideoFound={onVideoFound} token={token} />
 
                 <div className="mt-8 mb-6">
                   <h1 className="text-3xl font-display leading-snug mb-2">{activeMod.title}</h1>
@@ -1390,6 +1432,19 @@ export default function App() {
     if (userCourses) setCourses(userCourses)
   }
 
+  const videoFound = (modId, { video_id, video_duration }) => {
+    setCourses(prev => prev.map(c => ({
+      ...c,
+      modules: c.modules.map(m => m.id !== modId ? m : { ...m, video_id, video_duration })
+    })))
+    if (selected) {
+      setSelected(prev => ({
+        ...prev,
+        modules: prev.modules.map(m => m.id !== modId ? m : { ...m, video_id, video_duration })
+      }))
+    }
+  }
+
   const completeModule = async (modId, type) => {
     setCourses(prev => prev.map(c => ({
       ...c,
@@ -1451,8 +1506,9 @@ export default function App() {
               <CourseView 
                 course={selected} 
                 onBack={() => setPage('dashboard')} 
-                onComplete={completeModule} 
+                onComplete={completeModule}
                 onSaveNotes={saveNotes}
+                onVideoFound={videoFound}
                 token={user.token}
                 user={user}
               />
