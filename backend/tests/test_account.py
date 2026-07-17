@@ -41,7 +41,6 @@ def test_username_change_rejects_taken_username(client, registered_user, monkeyp
         lambda credential: {"sub": "google-bob", "email": "bob@test.com", "name": "Bob"},
     )
     second = client.post("/auth/google", json={"credential": "dummy-token"}).json()
-    second_headers = {"Authorization": f"Bearer {second['access_token']}"}
     second_username = second["username"]
 
     resp = client.patch(

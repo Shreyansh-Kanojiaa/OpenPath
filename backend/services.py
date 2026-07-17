@@ -3,10 +3,8 @@ import time
 import functools
 from google import genai
 from google.genai import types
-from youtubesearchpython import VideosSearch
 from youtube_transcript_api import YouTubeTranscriptApi
 import schemas
-from datetime import datetime
 import re
 
 
@@ -70,9 +68,9 @@ def validate_skill(skill: str) -> schemas.SkillValidation:
 # ─────────────────────────────────────────────────────────────────────────────
 
 @functools.lru_cache(maxsize=128)
-def _cached_syllabus(skill: str, level: int, time: str, depth: str) -> str:
+def _cached_syllabus(skill: str, level: int, time_commitment: str, depth: str) -> str:
     """
-    Inner function whose result is cached by (skill, level, time, depth).
+    Inner function whose result is cached by (skill, level, time_commitment, depth).
     Returns the raw JSON string so it is picklable by lru_cache.
     Already normalises skill to lowercase for better cache hits.
     """
@@ -82,7 +80,7 @@ def _cached_syllabus(skill: str, level: int, time: str, depth: str) -> str:
     prompt = f"""
     Create a highly detailed, structured learning syllabus for learning "{skill}".
     The user's current skill level is {level}/10.
-    Their time commitment is {time}.
+    Their time commitment is {time_commitment}.
     Their desired learning depth is "{depth}".
     Break the skill down into EXACTLY {num_modules} sequential, highly specific, and interconnected modules.
     Do not give general 'Introduction' or 'Advanced' titles; focus on specific sub-topics they need in order.
@@ -120,7 +118,7 @@ def _cached_syllabus(skill: str, level: int, time: str, depth: str) -> str:
     raise last_error
 
 
-def generate_syllabus(skill: str, level: int, time: str, depth: str = "Standard (5 modules)") -> schemas.CourseCreate:
+def generate_syllabus(skill: str, level: int, time_commitment: str, depth: str = "Standard (5 modules)") -> schemas.CourseCreate:
     if not os.environ.get("GEMINI_API_KEY"):
         raise ValueError("GEMINI_API_KEY environment variable is not set.")
 
@@ -128,7 +126,7 @@ def generate_syllabus(skill: str, level: int, time: str, depth: str = "Standard 
     num_modules = int(depth_match.group(1)) if depth_match else 5
 
     try:
-        raw_json = _cached_syllabus(skill.strip().lower(), level, time, depth)
+        raw_json = _cached_syllabus(skill.strip().lower(), level, time_commitment, depth)
         return schemas.CourseCreate.model_validate_json(raw_json)
     except Exception as e:
         print("Gemini API skipped/failed. Using fallback mock data:", e)
@@ -149,7 +147,7 @@ def generate_syllabus(skill: str, level: int, time: str, depth: str = "Standard 
         return schemas.CourseCreate(
             skill_name=skill,
             start_level=level,
-            time_commitment=time,
+            time_commitment=time_commitment,
             modules=mock_modules[:num_modules],
         )
 

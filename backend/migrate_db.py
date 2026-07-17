@@ -4,7 +4,6 @@ Works with both SQLite and PostgreSQL.
 Safe to re-run — skips columns that already exist.
 """
 
-import os
 from database import engine
 from sqlalchemy import text, inspect
 
