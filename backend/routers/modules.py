@@ -3,7 +3,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-import models, database, schemas, services, auth
+import models, database, schemas, services, auth, badge_service
 
 router = APIRouter(tags=["modules"])
 
@@ -31,7 +31,8 @@ def complete_module(
         module.completed_at = datetime.utcnow()
     module.is_completed = True
     db.commit()
-    return {"status": "success", "module_id": module_id}
+    new_badges = badge_service.evaluate_and_award(db, current_user)
+    return {"status": "success", "module_id": module_id, "new_badges": new_badges}
 
 
 @router.post("/modules/{module_id}/retry-video")

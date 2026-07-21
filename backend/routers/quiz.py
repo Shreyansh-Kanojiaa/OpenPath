@@ -3,7 +3,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-import models, database, schemas, services, auth
+import models, database, schemas, services, auth, badge_service
 
 router = APIRouter(tags=["quiz"])
 
@@ -48,4 +48,5 @@ def submit_quiz(
             module.is_completed = True
 
     db.commit()
-    return {"passed": passed, "score": score}
+    new_badges = badge_service.evaluate_and_award(db, current_user)
+    return {"passed": passed, "score": score, "new_badges": new_badges}

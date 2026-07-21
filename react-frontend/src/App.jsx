@@ -5,6 +5,7 @@ import { LiveTutor } from './features/LiveTutor'
 import { OfflineNotesButton } from './features/OfflineNotes'
 import { CareerHub } from './features/CareerHub'
 import { AccountSettings } from './features/AccountSettings'
+import { AchievementToast } from './features/Badges'
 import DotGrid from './components/DotGrid'
 import { Bot, Maximize2, Minimize2, MessageCircle, Loader2 } from 'lucide-react'
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1098,7 +1099,7 @@ function CourseView({ course, onBack, onComplete, onSaveNotes, onVideoFound, tok
 
 const DISCOVER_PAGE_SIZE = 12
 
-function DiscoverPage({ token, onEnroll }) {
+function DiscoverPage({ token, onEnroll, onNewBadges = () => {} }) {
   const [courses, setCourses] = useState([])
   const [total, setTotal] = useState(0)
   const [search, setSearch] = useState('')
@@ -1128,8 +1129,13 @@ function DiscoverPage({ token, onEnroll }) {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       })
-      if (res.ok) { onEnroll() }
-      else { const d = await res.json(); alert(d.detail || 'Could not add course.') }
+      const d = await res.json().catch(() => ({}))
+      if (res.ok) {
+        if (d.new_badges?.length) onNewBadges(d.new_badges)
+        onEnroll()
+      } else {
+        alert(d.detail || 'Could not add course.')
+      }
     } catch { alert('Network error.') }
     setEnrolling(null)
   }
@@ -1235,7 +1241,7 @@ const TIME_OPTIONS = [
   '1-2 hrs/week', '3-4 hrs/week', '5-7 hrs/week', '8-10 hrs/week', '10+ hrs/week',
 ]
 
-function GeneratePage({ token, onGenerate, initialSkill = '', isGenerating, setIsGenerating }) {
+function GeneratePage({ token, onGenerate, initialSkill = '', isGenerating, setIsGenerating, onNewBadges = () => {} }) {
   const [skill, setSkill] = useState(initialSkill)
   const [level, setLevel] = useState(3)
   const [time, setTime] = useState('3-4 hrs/week')
@@ -1252,10 +1258,11 @@ function GeneratePage({ token, onGenerate, initialSkill = '', isGenerating, setI
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       })
+      const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        const d = await res.json().catch(() => ({}))
-        throw new Error(d.detail || `Server error ${res.status}`)
+        throw new Error(data.detail || `Server error ${res.status}`)
       }
+      if (data.new_badges?.length) onNewBadges(data.new_badges)
       onGenerate()
     } catch (e) {
       setError(e.message || 'Something went wrong. Try again.')
@@ -1393,6 +1400,11 @@ export default function App() {
   const [showLanding, setShowLanding] = useState(true)
   const [prefilledSkill, setPrefilledSkill] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
+  const [badgeQueue, setBadgeQueue] = useState([])
+
+  const pushBadges = (newBadges) => {
+    if (newBadges?.length) setBadgeQueue(q => [...q, ...newBadges])
+  }
 
   useEffect(() => {
     const token = localStorage.getItem('op_token')
@@ -1457,15 +1469,18 @@ export default function App() {
       }))
     }
     try {
+      let res
       if (type === 'skipped') {
-        await fetch(`${API}/submit-quiz?module_id=${modId}&score=5`, {
+        res = await fetch(`${API}/submit-quiz?module_id=${modId}&score=5`, {
           method: 'POST', headers: { Authorization: `Bearer ${user.token}` }
         })
       } else {
-        await fetch(`${API}/modules/${modId}/complete`, {
+        res = await fetch(`${API}/modules/${modId}/complete`, {
           method: 'POST', headers: { Authorization: `Bearer ${user.token}` }
         })
       }
+      const data = await res.json().catch(() => ({}))
+      pushBadges(data.new_badges)
     } catch (e) { console.error(e) }
   }
 
@@ -1485,7 +1500,19 @@ export default function App() {
     <div className="min-h-screen bg-base flex flex-col font-sans text-slate-200 relative">
       <AmbientBackground />
       <NavPill active={page} setPage={setPage} user={user} onLogout={logout} />
-      
+
+      <div className="fixed top-6 right-6 z-50 flex flex-col gap-3 pointer-events-none">
+        <AnimatePresence>
+          {badgeQueue.map(b => (
+            <AchievementToast
+              key={b.key}
+              badge={b}
+              onDismiss={() => setBadgeQueue(q => q.filter(x => x.key !== b.key))}
+            />
+          ))}
+        </AnimatePresence>
+      </div>
+
       <main className="flex-1 overflow-x-hidden flex flex-col relative z-10">
         <div className="fixed inset-0 pointer-events-none">
           <div className="absolute inset-x-0 top-0 h-px bg-cyan/20" />
@@ -1513,8 +1540,8 @@ export default function App() {
                 user={user}
               />
             )}
-            {page === 'discover' && <DiscoverPage token={user.token} onEnroll={async () => { await refreshCourses(); setPage('dashboard') }} />}
-            {page === 'generate' && <GeneratePage key={prefilledSkill} token={user.token} initialSkill={prefilledSkill} isGenerating={isGenerating} setIsGenerating={setIsGenerating} onGenerate={() => { refreshCourses(); setPage('dashboard'); setPrefilledSkill(''); }} />}
+            {page === 'discover' && <DiscoverPage token={user.token} onEnroll={async () => { await refreshCourses(); setPage('dashboard') }} onNewBadges={pushBadges} />}
+            {page === 'generate' && <GeneratePage key={prefilledSkill} token={user.token} initialSkill={prefilledSkill} isGenerating={isGenerating} setIsGenerating={setIsGenerating} onGenerate={() => { refreshCourses(); setPage('dashboard'); setPrefilledSkill(''); }} onNewBadges={pushBadges} />}
             {page === 'career' && <CareerHub token={user.token} onGenerateClick={(skill) => { setPrefilledSkill(skill); setPage('generate'); }} onManageSkillsClick={() => setPage('account')} />}
             {page === 'account' && <AccountSettings token={user.token} />}
           </motion.div>

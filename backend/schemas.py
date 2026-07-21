@@ -31,6 +31,28 @@ class SkillValidation(BaseModel):
     reason: str = Field(description="One short sentence explaining the verdict.")
 
 
+# ── Badges ────────────────────────────────────────────────────────────────────
+class NewlyEarnedBadge(BaseModel):
+    key: str
+    name: str
+    description: str
+    icon: str
+
+
+class BadgeInfo(BaseModel):
+    key: str
+    name: str
+    description: str
+    icon: str
+    category: str
+    earned: bool
+    earned_at: Optional[datetime.datetime] = None
+
+
+class BadgesResponse(BaseModel):
+    badges: List[BadgeInfo]
+
+
 # ── Course ────────────────────────────────────────────────────────────────────
 class CourseCreate(BaseModel):
     skill_name: str
@@ -46,6 +68,7 @@ class CourseResponse(BaseModel):
     time_commitment: str
     is_public: bool = False
     modules: List[ModuleResponse] = []
+    new_badges: List[NewlyEarnedBadge] = []
 
     class Config:
         from_attributes = True

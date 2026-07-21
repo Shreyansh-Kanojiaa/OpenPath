@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Text, false
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Text, false, UniqueConstraint
 from sqlalchemy.orm import relationship, validates
 import datetime
 from database import Base
@@ -78,3 +78,15 @@ class QuizAttempt(Base):
 
     module = relationship("Module", back_populates="quiz_attempts")
     user = relationship("User", back_populates="quiz_attempts")
+
+
+class UserBadge(Base):
+    __tablename__ = "user_badges"
+    __table_args__ = (UniqueConstraint("user_id", "badge_key", name="uq_user_badge"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), index=True)
+    badge_key = Column(String, index=True)
+    earned_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    user = relationship("User")

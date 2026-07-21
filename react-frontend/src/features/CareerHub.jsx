@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import ForceGraph2D from 'react-force-graph-2d';
 import { Briefcase, Target, Map, Clock, CheckCircle2, ChevronRight, Loader2 } from 'lucide-react';
+import { BadgeGrid } from './Badges';
 
 const API = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8000`;
 
@@ -245,9 +246,7 @@ export function CareerHub({ token, onGenerateClick, onManageSkillsClick }) {
           <div className="glass-card p-6 bg-blue/5 border-blue/20 rounded-2xl">
             <h3 className="text-lg font-bold mb-2 text-white">Verified Badges</h3>
             <p className="text-xs text-slate-400 mb-6">Complete paths to unlock verifiable micro-credentials.</p>
-            <div className="flex items-center justify-center h-32 border-2 border-dashed border-white/10 rounded-2xl">
-              <span className="text-sm text-slate-500 font-mono tracking-widest uppercase">Coming Soon</span>
-            </div>
+            <BadgeGrid token={token} />
           </div>
         </div>
       </div>

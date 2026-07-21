@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import List, Optional
 from sqlalchemy.orm import Session
 
-import models, database, schemas, services, auth
+import models, database, schemas, services, auth, badge_service
 
 router = APIRouter(tags=["courses"])
 
@@ -64,6 +64,7 @@ def generate_course(
         db.add(new_module)
 
     db.commit()
+    new_course.new_badges = badge_service.evaluate_and_award(db, current_user)
     return new_course
 
 
@@ -184,4 +185,5 @@ def enroll_public_course(
             )
         )
     db.commit()
+    new_course.new_badges = badge_service.evaluate_and_award(db, current_user)
     return new_course
