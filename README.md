@@ -45,6 +45,7 @@ Evaluate job readiness against targeted professional roles and map out your skil
 *   **AI-Distilled Flashcards**: Active module transcripts are processed into interactive Q&A study flashcards to reinforce memory retention and recall.
 *   **Career Hub & Skill Graph**: Connect learning to professional outcomes. Evaluate job readiness against targeted roles (e.g., Machine Learning Engineer at Google). Visualizes your overall skills as an interactive 2D Force-Directed Skill Graph.
 *   **Community Marketplace**: Share completed learning paths publicly to the community marketplace, or clone and enroll in roadmaps designed by other learners.
+*   **Achievement Badges**: Earn persistent, permanent badges for course milestones, skill mastery, activity streaks, and quiz performance. Unlocking a badge fires a toast notification and the full collection (earned and locked) is on display in the Career Hub.
 
 ---
 
@@ -172,9 +173,11 @@ OpenPath/
 ├── assets/                    # Project screenshots and design mockups
 ├── backend/                   # FastAPI REST API & Gemini Orchestration
 │   ├── alembic/               # Database migrations
-│   ├── routers/                # FastAPI routers (auth, courses, modules, quiz, career)
+│   ├── routers/                # FastAPI routers (auth, courses, modules, quiz, career, badges)
 │   ├── tests/                  # pytest suite
 │   ├── auth.py                 # App JWT creation/decoding + Google ID-token verification
+│   ├── badges_catalog.py        # Static badge/achievement metadata (names, descriptions, icons)
+│   ├── badge_service.py         # Badge unlock evaluation, called after completion/quiz/course events
 │   ├── database.py             # SQLAlchemy engine, session maker, DB base
 │   ├── main.py                  # FastAPI app composition root & middleware configuration
 │   ├── migrate_db.py            # Auto-migration utilities
@@ -185,7 +188,7 @@ OpenPath/
 ├── react-frontend/            # High-fidelity React UI (Tokyo Night design)
 │   ├── src/
 │   │   ├── components/ui/     # Reusable Tokyo Night atomic components
-│   │   ├── features/          # Core views (CareerHub, LiveTutor, OfflineNotes)
+│   │   ├── features/          # Core views (CareerHub, LiveTutor, OfflineNotes, Badges)
 │   │   ├── App.jsx            # Main dashboard manager & page state router
 │   │   ├── index.css          # Tailwind CSS v4 directives & custom themes
 │   │   └── main.jsx           # App entry point
@@ -225,6 +228,7 @@ The FastAPI backend exposes the following primary endpoints. You can explore sta
 | **GET** | `/modules/{id}/offline-notes` | Export clean markdown notes for local offline studying | Yes |
 | **POST** | `/career/job-ready` | Evaluate matching score against target roles and companies | Yes |
 | **GET** | `/career/skill-graph` | Generate interactive skill connections map for force graph | Yes |
+| **GET** | `/users/me/badges` | Full badge catalog with this user's earned/locked state | Yes |
 
 ---
 
